@@ -195,6 +195,36 @@ class _QtMainWindow(QMainWindow):
         window = cls.current()
         return window._qt_viewer.viewer if window else None
 
+    def eventFilter(self, qobject, qevent):
+        if Qt.ControlModifier == QApplication.keyboardModifiers():
+            if qevent.type() == QEvent.Type.MouseButtonPress:
+                if qevent.buttons() == Qt.RightButton:
+                    if "QtGui.QWindow" in str(qobject.__class__):
+                        print(
+                            "==================================================================================="
+                        )
+                    elif any(
+                        match in str(qobject.__class__)
+                        for match in [
+                            "napari._qt.qt_main_window",
+                            "napari._qt.dialogs",
+                            "app_model.backends.qt._qmenu.QModelMenu",
+                            "napari._qt.menus",
+                        ]
+                    ):
+                        print(
+                            f"{qobject}\n{inspect.getmodule(qobject)}\n{qobject.__class__}"
+                        )
+                        print(
+                            "==================================================================================="
+                        )
+                    else:
+                        print(
+                            f"{qobject}\n{inspect.getmodule(qobject)}\n{qobject.__class__}\n"
+                        )
+                    qevent.ignore()
+        return super().eventFilter(qobject, qevent)
+
     def event(self, e: QEvent) -> bool:
         if (
             e.type() == QEvent.Type.ToolTip
@@ -553,7 +583,7 @@ class Window:
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
-        get_app()
+        qapp = get_app()
 
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[
@@ -563,6 +593,7 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
+        qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
