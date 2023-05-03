@@ -94,12 +94,14 @@ def test_qt_size_slider_preview_widget_minimum(font_size_preview_widget):
     assert widget._slider.minimum() == 5
     assert widget._slider_min_label.text() == "5"
 
-    widget.setMinimum(20)
-    assert widget.minimum() == 20
-    assert widget.value() == 20
-    assert widget._slider.minimum() == 20
-    assert widget._slider_min_label.text() == "20"
-    assert widget._lineedit.text() == "20"
+    current_value = widget.value()
+    new_minimum = current_value + 1
+    widget.setMinimum(new_minimum)
+    assert widget.minimum() == new_minimum
+    assert widget.value() == new_minimum
+    assert widget._slider.minimum() == new_minimum
+    assert widget._slider_min_label.text() == str(new_minimum)
+    assert widget._lineedit.text() == str(new_minimum)
 
 
 def test_qt_size_slider_preview_widget_minimum_invalid(
