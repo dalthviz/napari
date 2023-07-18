@@ -140,6 +140,7 @@ class QtDimSliderWidget(QWidget):
         We split this out as a separate function for perfmon.
         """
         self.dims.set_current_step(self.axis, value)
+        self.qt_dims.setFocus()
 
     def _create_range_slider_widget(self):
         """Creates a range slider widget for a given axis."""
@@ -159,6 +160,7 @@ class QtDimSliderWidget(QWidget):
 
         def slider_focused_listener():
             self.dims.last_used = self.axis
+            self.qt_dims.setFocus()
 
         # linking focus listener to the last used:
         slider.sliderPressed.connect(slider_focused_listener)

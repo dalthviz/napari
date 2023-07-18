@@ -606,6 +606,7 @@ class Window:
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
         qapp.installEventFilter(self._qt_window)
+        qapp.installEventFilter(self._qt_viewer)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.

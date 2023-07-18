@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple, Type, Union
 from weakref import WeakSet, ref
 
-from qtpy.QtCore import QCoreApplication, QObject, Qt
+from qtpy.QtCore import QCoreApplication, QEvent, QObject, Qt
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
@@ -23,6 +23,7 @@ from napari._qt.widgets.qt_dims import QtDims
 from napari._qt.widgets.qt_viewer_buttons import (
     QtLayerButtons,
     QtViewerButtons,
+    QtViewerPushButton,
 )
 from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from napari._qt.widgets.qt_welcome import QtWidgetOverlay
@@ -940,6 +941,14 @@ class QtViewer(QSplitter):
         """Show welcome screen widget."""
         self._show_welcome_screen = visible
         self._welcome_widget.set_welcome_visible(visible)
+
+    def eventFilter(self, widget, event):
+        if event.type() == QEvent.Type.FocusIn and isinstance(
+            widget, QtViewerPushButton
+        ):
+            self.dims.setFocus()
+            event.accept()
+        return super().eventFilter(widget, event)
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
