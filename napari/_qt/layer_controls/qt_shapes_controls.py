@@ -3,9 +3,19 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
-from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import (
+    LayerButtonsFlowLayout,
+    QtCollapsibleLayerControlsSection,
+    QtLayerControls,
+)
 from napari._qt.utils import (
     qt_signals_blocked,
     set_widgets_enabled_with_opacity,
@@ -173,7 +183,7 @@ class QtShapesControls(QtLayerControls):
 
         self.panzoom_button = _radio_button(
             layer,
-            'pan',
+            'pan_zoom',
             Mode.PAN_ZOOM,
             "activate_shapes_pan_zoom_mode",
             extra_tooltip_text=trans._('(or hold Space)'),
@@ -273,8 +283,8 @@ class QtShapesControls(QtLayerControls):
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
-        self.button_group.addButton(self.direct_button)
         self.button_group.addButton(self.panzoom_button)
+        self.button_group.addButton(self.direct_button)
         self.button_group.addButton(self.rectangle_button)
         self.button_group.addButton(self.ellipse_button)
         self.button_group.addButton(self.line_button)
@@ -285,24 +295,26 @@ class QtShapesControls(QtLayerControls):
         self.button_group.addButton(self.vertex_remove_button)
         self._on_editable_or_visible_change()
 
-        button_grid = QGridLayout()
-        button_grid.addWidget(self.vertex_remove_button, 0, 2)
-        button_grid.addWidget(self.vertex_insert_button, 0, 3)
-        button_grid.addWidget(self.delete_button, 0, 4)
-        button_grid.addWidget(self.direct_button, 0, 5)
-        button_grid.addWidget(self.select_button, 0, 6)
-        button_grid.addWidget(self.panzoom_button, 0, 7)
-        button_grid.addWidget(self.move_back_button, 1, 0)
-        button_grid.addWidget(self.move_front_button, 1, 1)
-        button_grid.addWidget(self.ellipse_button, 1, 2)
-        button_grid.addWidget(self.rectangle_button, 1, 3)
-        button_grid.addWidget(self.polygon_button, 1, 4)
-        button_grid.addWidget(self.polygon_lasso_button, 1, 5)
-        button_grid.addWidget(self.line_button, 1, 6)
-        button_grid.addWidget(self.path_button, 1, 7)
-        button_grid.setContentsMargins(5, 0, 0, 5)
-        button_grid.setColumnStretch(0, 1)
-        button_grid.setSpacing(4)
+        buttons_widget = QWidget()
+        button_grid = LayerButtonsFlowLayout()
+        button_grid.addWidget(self.panzoom_button)  # , 0, 7)
+        button_grid.addWidget(self.polygon_button)  # , 1, 4)
+        button_grid.addWidget(self.line_button)  # , 1, 6)
+        button_grid.addWidget(self.path_button)  # , 1, 7)
+        button_grid.addWidget(self.polygon_lasso_button)  # , 1, 5)
+        button_grid.addWidget(self.rectangle_button)  # , 1, 3)
+        button_grid.addWidget(self.ellipse_button)  # , 1, 2)
+        button_grid.addWidget(self.direct_button)  # , 0, 5)
+        button_grid.addWidget(self.select_button)  # , 0, 6)
+        button_grid.addWidget(self.delete_button)  # , 0, 4)
+        button_grid.addWidget(self.vertex_insert_button)  # , 0, 3)
+        button_grid.addWidget(self.vertex_remove_button)  # , 0, 2)
+        button_grid.addWidget(self.move_front_button)  # , 1, 1)
+        button_grid.addWidget(self.move_back_button)  # , 1, 0)
+        # button_grid.setContentsMargins(5, 0, 0, 5)
+        # button_grid.setColumnStretch(0, 1)
+        # button_grid.setSpacing(4)
+        buttons_widget.setLayout(button_grid)
 
         self.faceColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_face_color,
@@ -323,13 +335,35 @@ class QtShapesControls(QtLayerControls):
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb
 
-        self.layout().addRow(button_grid)
-        self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('edge width:'), self.widthSlider)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(trans._('face color:'), self.faceColorEdit)
-        self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
-        self.layout().addRow(trans._('display text:'), self.textDispCheckBox)
+        self.shapesSection = QtCollapsibleLayerControlsSection("shapes")
+        # self.shapesSection.addRowToSection(self.opacityLabel, self.opacitySlider)
+        self.shapesSection.addRowToSection(
+            trans._('edge width:'), self.widthSlider
+        )
+        # self.shapesSection.addRowToSection(trans._('blending:'), self.blendComboBox)
+        self.shapesSection.addRowToSection(
+            trans._('face color:'), self.faceColorEdit
+        )
+        self.shapesSection.addRowToSection(
+            trans._('edge color:'), self.edgeColorEdit
+        )
+        self.shapesSection.addRowToSection(
+            trans._('display text:'), self.textDispCheckBox
+        )
+
+        controls_scroll = QScrollArea()
+        controls_scroll.setWidgetResizable(True)
+        controls_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        controls_widget = QWidget()
+        controls_layout = QVBoxLayout()
+        controls_layout.addWidget(self.baseSection)
+        controls_layout.addWidget(self.shapesSection)
+        controls_layout.addStretch(1)
+        controls_widget.setLayout(controls_layout)
+        controls_scroll.setWidget(controls_widget)
+
+        self.layout().addWidget(buttons_widget)
+        self.layout().addWidget(controls_scroll)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when shapes layer mode changed.

@@ -9,12 +9,18 @@ from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QScrollArea,
     QSpinBox,
+    QVBoxLayout,
     QWidget,
 )
 from superqt import QLargeIntSpinBox
 
-from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import (
+    LayerButtonsFlowLayout,
+    QtCollapsibleLayerControlsSection,
+    QtLayerControls,
+)
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets._slider_compat import QSlider
 from napari._qt.widgets.qt_mode_buttons import (
@@ -179,7 +185,7 @@ class QtLabelsControls(QtLayerControls):
 
         self.panzoom_button = QtModeRadioButton(
             layer,
-            'pan',
+            'pan_zoom',
             Mode.PAN_ZOOM,
             checked=True,
         )
@@ -244,17 +250,18 @@ class QtLabelsControls(QtLayerControls):
         self.button_group.addButton(self.erase_button)
         self._on_editable_or_visible_change()
 
-        button_row = QHBoxLayout()
-        button_row.addStretch(1)
-        button_row.addWidget(self.colormapUpdate)
-        button_row.addWidget(self.erase_button)
-        button_row.addWidget(self.paint_button)
-        button_row.addWidget(self.polygon_button)
-        button_row.addWidget(self.fill_button)
-        button_row.addWidget(self.pick_button)
+        # TODO: Probably this should be inside the base class and a
+        # `addButton(button: QPushButton)` method should be added
+        buttons_widget = QWidget()
+        button_row = LayerButtonsFlowLayout()
         button_row.addWidget(self.panzoom_button)
-        button_row.setSpacing(4)
-        button_row.setContentsMargins(0, 0, 0, 5)
+        button_row.addWidget(self.paint_button)
+        button_row.addWidget(self.fill_button)
+        button_row.addWidget(self.polygon_button)
+        button_row.addWidget(self.erase_button)
+        button_row.addWidget(self.colormapUpdate)
+        button_row.addWidget(self.pick_button)
+        buttons_widget.setLayout(button_row)
 
         renderComboBox = QComboBox(self)
         rendering_options = [i.value for i in LabelsRendering]
@@ -288,22 +295,51 @@ class QtLabelsControls(QtLayerControls):
         color_layout.addWidget(self.colorBox)
         color_layout.addWidget(self.selectionSpinBox)
 
-        self.layout().addRow(button_row)
-        self.layout().addRow(trans._('label:'), color_layout)
-        self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('brush size:'), self.brushSizeSlider)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(self.renderLabel, self.renderComboBox)
-        self.layout().addRow(trans._('color mode:'), self.colorModeComboBox)
-        self.layout().addRow(trans._('contour:'), self.contourSpinBox)
-        self.layout().addRow(trans._('n edit dim:'), self.ndimSpinBox)
-        self.layout().addRow(trans._('contiguous:'), self.contigCheckBox)
-        self.layout().addRow(
+        self.labelsSection = QtCollapsibleLayerControlsSection("labels")
+        self.labelsSection.addRowToSection(trans._('label:'), color_layout)
+        self.labelsSection.addRowToSection(
+            trans._('brush size:'), self.brushSizeSlider
+        )
+        self.labelsSection.addRowToSection(
+            self.renderLabel, self.renderComboBox
+        )
+        self.labelsSection.addRowToSection(
+            trans._('color mode:'), self.colorModeComboBox
+        )
+        self.labelsSection.addRowToSection(
+            trans._('contour:'), self.contourSpinBox
+        )
+        self.labelsSection.addRowToSection(
+            trans._('n edit dim:'), self.ndimSpinBox
+        )
+        self.labelsSection.addRowToSection(
+            trans._('contiguous:'), self.contigCheckBox
+        )
+        self.labelsSection.addRowToSection(
             trans._('preserve\nlabels:'), self.preserveLabelsCheckBox
         )
-        self.layout().addRow(
+        self.labelsSection.addRowToSection(
             trans._('show\nselected:'), self.selectedColorCheckbox
         )
+
+        # TODO: Probably this should go inside the base class and a
+        # `addControlsSection(widget: QtCollapsibleLayerControlsSection`
+        # method should be added
+        controls_scroll = QScrollArea()
+        controls_scroll.setWidgetResizable(True)
+        controls_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        controls_widget = QWidget()
+        controls_layout = QVBoxLayout()
+        controls_layout.addWidget(self.baseSection)
+        controls_layout.addWidget(self.labelsSection)
+        controls_layout.addStretch(1)
+        controls_widget.setLayout(controls_layout)
+        controls_scroll.setWidget(controls_widget)
+
+        # TODO: Probably this should go inside the base class too if
+        # methods to add buttons and sections are available
+        self.layout().addWidget(buttons_widget)
+        self.layout().addWidget(controls_scroll)
 
     def _on_mode_change(self, event):
         """Receive layer model mode change event and update checkbox ticks.

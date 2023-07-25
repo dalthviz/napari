@@ -3,9 +3,20 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt, Slot
-from qtpy.QtWidgets import QButtonGroup, QCheckBox, QComboBox, QHBoxLayout
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QComboBox,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
-from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import (
+    LayerButtonsFlowLayout,
+    QtCollapsibleLayerControlsSection,
+    QtLayerControls,
+)
 from napari._qt.utils import (
     qt_signals_blocked,
     set_widgets_enabled_with_opacity,
@@ -168,7 +179,7 @@ class QtPointsControls(QtLayerControls):
         )
         self.panzoom_button = QtModeRadioButton(
             layer,
-            'pan',
+            'pan_zoom',
             Mode.PAN_ZOOM,
             checked=True,
         )
@@ -200,24 +211,51 @@ class QtPointsControls(QtLayerControls):
         self.button_group.addButton(self.panzoom_button)
         self._on_editable_or_visible_change()
 
-        button_row = QHBoxLayout()
-        button_row.addStretch(1)
-        button_row.addWidget(self.delete_button)
-        button_row.addWidget(self.addition_button)
-        button_row.addWidget(self.select_button)
+        buttons_widget = QWidget()
+        button_row = LayerButtonsFlowLayout()
         button_row.addWidget(self.panzoom_button)
-        button_row.setContentsMargins(0, 0, 0, 5)
-        button_row.setSpacing(4)
+        button_row.addWidget(self.addition_button)
+        button_row.addWidget(self.delete_button)
+        button_row.addWidget(self.select_button)
+        # button_row.setContentsMargins(0, 0, 0, 5)
+        # button_row.setSpacing(4)
+        buttons_widget.setLayout(button_row)
 
-        self.layout().addRow(button_row)
-        self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('point size:'), self.sizeSlider)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(trans._('symbol:'), self.symbolComboBox)
-        self.layout().addRow(trans._('face color:'), self.faceColorEdit)
-        self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
-        self.layout().addRow(trans._('display text:'), self.textDispCheckBox)
-        self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
+        # self.layout().addRow(self.opacityLabel, self.opacitySlider)
+        self.pointsSection = QtCollapsibleLayerControlsSection("points")
+        self.pointsSection.addRowToSection(
+            trans._('point size:'), self.sizeSlider
+        )
+        # self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.pointsSection.addRowToSection(
+            trans._('symbol:'), self.symbolComboBox
+        )
+        self.pointsSection.addRowToSection(
+            trans._('face color:'), self.faceColorEdit
+        )
+        self.pointsSection.addRowToSection(
+            trans._('edge color:'), self.edgeColorEdit
+        )
+        self.pointsSection.addRowToSection(
+            trans._('display text:'), self.textDispCheckBox
+        )
+        self.pointsSection.addRowToSection(
+            trans._('out of slice:'), self.outOfSliceCheckBox
+        )
+
+        controls_scroll = QScrollArea()
+        controls_scroll.setWidgetResizable(True)
+        controls_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        controls_widget = QWidget()
+        controls_layout = QVBoxLayout()
+        controls_layout.addWidget(self.baseSection)
+        controls_layout.addWidget(self.pointsSection)
+        controls_layout.addStretch(1)
+        controls_widget.setLayout(controls_layout)
+        controls_scroll.setWidget(controls_widget)
+
+        self.layout().addWidget(buttons_widget)
+        self.layout().addWidget(controls_scroll)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when points layer mode is changed.
