@@ -201,7 +201,7 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
         form_widget.setLayout(self._internal_layout)
 
         self.addWidget(form_widget)
-        self.expand(animate=False)
+        # self._expand_collapse(QPropertyAnimation.Direction.Forward, animate=False, emit=False)
 
     def addRowToSection(self, *args):
         self._internal_layout.addRow(*args)

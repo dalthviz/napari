@@ -3,13 +3,23 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
+from qtpy.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 from superqt import QDoubleRangeSlider
 
 from napari._qt.layer_controls.qt_colormap_combobox import QtColormapComboBox
-from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import (
+    QtCollapsibleLayerControlsSection,
+    QtLayerControls,
+)
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
@@ -23,6 +33,8 @@ if TYPE_CHECKING:
 
 
 class _QDoubleRangeSlider(QDoubleRangeSlider):
+    right_button_mouse_press = Signal()
+
     def mousePressEvent(self, event):
         """Update the slider, or, on right-click, pop-up an expanded slider.
 
@@ -35,7 +47,7 @@ class _QDoubleRangeSlider(QDoubleRangeSlider):
             The napari event that triggered this method.
         """
         if event.button() == Qt.MouseButton.RightButton:
-            self.parent().show_clim_popupup()
+            self.right_button_mouse_press.emit()
         else:
             super().mousePressEvent(event)
 
@@ -104,6 +116,9 @@ class QtBaseImageControls(QtLayerControls):
         self.contrastLimitsSlider.setToolTip(
             trans._('Right click for detailed slider popup.')
         )
+        self.contrastLimitsSlider.right_button_mouse_press.connect(
+            self.show_clim_popupup
+        )
 
         self.clim_popup = None
 
@@ -131,6 +146,49 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel = QLabel(parent=self)
         self.colorbarLabel.setObjectName('colorbar')
         self.colorbarLabel.setToolTip(trans._('Colorbar'))
+
+        colormap_layout = QHBoxLayout()
+        if hasattr(self.layer, 'rgb') and self.layer.rgb:
+            colormap_layout.addWidget(QLabel("RGB"))
+            self.colormapComboBox.setVisible(False)
+            self.colorbarLabel.setVisible(False)
+        else:
+            colormap_layout.addWidget(self.colorbarLabel)
+            colormap_layout.addWidget(self.colormapComboBox)
+        colormap_layout.addStretch(1)
+
+        self.imagesSection = QtCollapsibleLayerControlsSection("images")
+        self.imagesSection.addRowToSection(
+            trans._('contrast limits:'), self.contrastLimitsSlider
+        )
+        self.imagesSection.addRowToSection(
+            trans._('auto-contrast:'), self.autoScaleBar
+        )
+        self.imagesSection.addRowToSection(trans._('gamma:'), self.gammaSlider)
+        self.imagesSection.addRowToSection(
+            trans._('colormap:'), colormap_layout
+        )
+
+        # TODO: Probably this should go inside the base class and a
+        # `addControlsSection(widget: QtCollapsibleLayerControlsSection`
+        # method should be added
+        controls_scroll = QScrollArea()
+        controls_scroll.setWidgetResizable(True)
+        controls_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        controls_widget = QWidget()
+        controls_layout = QVBoxLayout()
+        controls_layout.addWidget(self.baseSection)
+        controls_layout.addWidget(self.imagesSection)
+        controls_layout.addStretch(1)
+        controls_widget.setLayout(controls_layout)
+        controls_scroll.setWidget(controls_widget)
+        controls_scroll.adjustSize()
+
+        # TODO: Probably this should go inside the base class too if
+        # methods to add buttons and sections are available
+        self.layout().addWidget(controls_scroll)
 
         self._on_colormap_change()
 

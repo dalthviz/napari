@@ -2,9 +2,20 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLabel
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QLabel,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
-from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import (
+    QtCollapsibleLayerControlsSection,
+    QtLayerControls,
+)
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers.utils._color_manager_constants import ColorMode
@@ -122,19 +133,50 @@ class QtVectorsControls(QtLayerControls):
         out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
         self.outOfSliceCheckBox = out_of_slice_cb
 
-        self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('width:'), self.widthSpinBox)
-        self.layout().addRow(trans._('length:'), self.lengthSpinBox)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(
+        # self.layout().addRow(self.opacityLabel, self.opacitySlider)
+        self.vectorsSection = QtCollapsibleLayerControlsSection("images")
+        self.vectorsSection.addRowToSection(
+            trans._('width:'), self.widthSpinBox
+        )
+        self.vectorsSection.addRowToSection(
+            trans._('length:'), self.lengthSpinBox
+        )
+        # self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.vectorsSection.addRowToSection(
             trans._('vector style:'), self.vector_style_comboBox
         )
-        self.layout().addRow(
+        self.vectorsSection.addRowToSection(
             trans._('edge color mode:'), self.color_mode_comboBox
         )
-        self.layout().addRow(self.edge_color_label, self.edgeColorEdit)
-        self.layout().addRow(self.edge_prop_label, self.color_prop_box)
-        self.layout().addRow(trans._('out of slice:'), self.outOfSliceCheckBox)
+        self.vectorsSection.addRowToSection(
+            self.edge_color_label, self.edgeColorEdit
+        )
+        self.vectorsSection.addRowToSection(
+            self.edge_prop_label, self.color_prop_box
+        )
+        self.vectorsSection.addRowToSection(
+            trans._('out of slice:'), self.outOfSliceCheckBox
+        )
+
+        # TODO: Probably this should go inside the base class and a
+        # `addControlsSection(widget: QtCollapsibleLayerControlsSection`
+        # method should be added
+        controls_scroll = QScrollArea()
+        controls_scroll.setWidgetResizable(True)
+        controls_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        controls_widget = QWidget()
+        controls_layout = QVBoxLayout()
+        controls_layout.addWidget(self.baseSection)
+        controls_layout.addWidget(self.vectorsSection)
+        controls_layout.addStretch(1)
+        controls_widget.setLayout(controls_layout)
+        controls_scroll.setWidget(controls_widget)
+
+        # TODO: Probably this should go inside the base class too if
+        # methods to add buttons and sections are available
+        self.layout().addWidget(controls_scroll)
 
         self.layer.events.edge_width.connect(self._on_edge_width_change)
         self.layer.events.length.connect(self._on_length_change)

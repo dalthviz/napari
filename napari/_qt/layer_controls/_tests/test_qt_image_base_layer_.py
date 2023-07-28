@@ -67,6 +67,7 @@ def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
     """The buttons in the clim_popup should adjust the contrast limits value"""
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
+    # qtctrl.show()
     original_clims = tuple(layer.contrast_limits)
     layer.contrast_limits = (20, 40)
     qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
@@ -77,6 +78,7 @@ def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
     )
     reset_button.click()
     qapp.processEvents()
+    # qtbot.stop()
     assert tuple(qtctrl.contrastLimitsSlider.value()) == original_clims
 
     rangebtn = qtctrl.clim_popup.findChild(

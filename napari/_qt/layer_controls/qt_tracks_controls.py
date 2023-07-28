@@ -1,9 +1,19 @@
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QComboBox, QSlider
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QScrollArea,
+    QSlider,
+    QVBoxLayout,
+    QWidget,
+)
 
-from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import (
+    QtCollapsibleLayerControlsSection,
+    QtLayerControls,
+)
 from napari._qt.utils import qt_signals_blocked
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.translations import trans
@@ -87,16 +97,53 @@ class QtTracksControls(QtLayerControls):
         self.color_by_combobox.currentTextChanged.connect(self.change_color_by)
         self.colormap_combobox.currentTextChanged.connect(self.change_colormap)
 
-        self.layout().addRow(trans._('color by:'), self.color_by_combobox)
-        self.layout().addRow(trans._('colormap:'), self.colormap_combobox)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(trans._('tail width:'), self.tail_width_slider)
-        self.layout().addRow(trans._('tail length:'), self.tail_length_slider)
-        self.layout().addRow(trans._('head length:'), self.head_length_slider)
-        self.layout().addRow(trans._('tail:'), self.tail_checkbox)
-        self.layout().addRow(trans._('show ID:'), self.id_checkbox)
-        self.layout().addRow(trans._('graph:'), self.graph_checkbox)
+        self.tracksSection = QtCollapsibleLayerControlsSection("images")
+        self.tracksSection.addRowToSection(
+            trans._('color by:'), self.color_by_combobox
+        )
+        self.tracksSection.addRowToSection(
+            trans._('colormap:'), self.colormap_combobox
+        )
+        # self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        # self.layout().addRow(self.opacityLabel, self.opacitySlider)
+        self.tracksSection.addRowToSection(
+            trans._('tail width:'), self.tail_width_slider
+        )
+        self.tracksSection.addRowToSection(
+            trans._('tail length:'), self.tail_length_slider
+        )
+        self.tracksSection.addRowToSection(
+            trans._('head length:'), self.head_length_slider
+        )
+        self.tracksSection.addRowToSection(
+            trans._('tail:'), self.tail_checkbox
+        )
+        self.tracksSection.addRowToSection(
+            trans._('show ID:'), self.id_checkbox
+        )
+        self.tracksSection.addRowToSection(
+            trans._('graph:'), self.graph_checkbox
+        )
+
+        # TODO: Probably this should go inside the base class and a
+        # `addControlsSection(widget: QtCollapsibleLayerControlsSection`
+        # method should be added
+        controls_scroll = QScrollArea()
+        controls_scroll.setWidgetResizable(True)
+        controls_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        controls_widget = QWidget()
+        controls_layout = QVBoxLayout()
+        controls_layout.addWidget(self.baseSection)
+        controls_layout.addWidget(self.tracksSection)
+        controls_layout.addStretch(1)
+        controls_widget.setLayout(controls_layout)
+        controls_scroll.setWidget(controls_widget)
+
+        # TODO: Probably this should go inside the base class too if
+        # methods to add buttons and sections are available
+        self.layout().addWidget(controls_scroll)
 
         self._on_tail_length_change()
         self._on_tail_width_change()

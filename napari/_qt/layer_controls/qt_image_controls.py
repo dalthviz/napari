@@ -158,31 +158,48 @@ class QtImageControls(QtBaseImageControls):
 
         self._on_ndisplay_changed()
 
-        colormap_layout = QHBoxLayout()
-        if hasattr(self.layer, 'rgb') and self.layer.rgb:
-            colormap_layout.addWidget(QLabel("RGB"))
-            self.colormapComboBox.setVisible(False)
-            self.colorbarLabel.setVisible(False)
-        else:
-            colormap_layout.addWidget(self.colorbarLabel)
-            colormap_layout.addWidget(self.colormapComboBox)
-        colormap_layout.addStretch(1)
+        # colormap_layout = QHBoxLayout()
+        # if hasattr(self.layer, 'rgb') and self.layer.rgb:
+        #     colormap_layout.addWidget(QLabel("RGB"))
+        #     self.colormapComboBox.setVisible(False)
+        #     self.colorbarLabel.setVisible(False)
+        # else:
+        #     colormap_layout.addWidget(self.colorbarLabel)
+        #     colormap_layout.addWidget(self.colormapComboBox)
+        # colormap_layout.addStretch(1)
 
-        self.layout().addRow(self.opacityLabel, self.opacitySlider)
-        self.layout().addRow(
-            trans._('contrast limits:'), self.contrastLimitsSlider
+        # self.imagesSection = QtCollapsibleLayerControlsSection("images")
+        # self.layout().addRow(self.opacityLabel, self.opacitySlider)
+
+        #         self.imagesSection.addRowToSection(
+        #             trans._('contrast limits:'), self.contrastLimitsSlider
+        #         )
+        #         self.imagesSection.addRowToSection(
+        # trans._('auto-contrast:'), self.autoScaleBar)
+        #         self.imagesSection.addRowToSection(
+        # trans._('gamma:'), self.gammaSlider)
+        # self.imagesSection.addRowToSection(
+        # trans._('colormap:'), colormap_layout)
+        # self.layout().addRow(trans._('blending:'), self.blendComboBox)
+        self.imagesSection.addRowToSection(
+            self.interpLabel, self.interpComboBox
         )
-        self.layout().addRow(trans._('auto-contrast:'), self.autoScaleBar)
-        self.layout().addRow(trans._('gamma:'), self.gammaSlider)
-        self.layout().addRow(trans._('colormap:'), colormap_layout)
-        self.layout().addRow(trans._('blending:'), self.blendComboBox)
-        self.layout().addRow(self.interpLabel, self.interpComboBox)
-        self.layout().addRow(self.depictionLabel, self.depictionComboBox)
-        self.layout().addRow(self.renderLabel, self.renderComboBox)
-        self.layout().addRow(self.isoThresholdLabel, self.isoThresholdSlider)
-        self.layout().addRow(self.attenuationLabel, self.attenuationSlider)
-        self.layout().addRow(self.planeNormalLabel, self.planeNormalButtons)
-        self.layout().addRow(
+        self.imagesSection.addRowToSection(
+            self.depictionLabel, self.depictionComboBox
+        )
+        self.imagesSection.addRowToSection(
+            self.renderLabel, self.renderComboBox
+        )
+        self.imagesSection.addRowToSection(
+            self.isoThresholdLabel, self.isoThresholdSlider
+        )
+        self.imagesSection.addRowToSection(
+            self.attenuationLabel, self.attenuationSlider
+        )
+        self.imagesSection.addRowToSection(
+            self.planeNormalLabel, self.planeNormalButtons
+        )
+        self.imagesSection.addRowToSection(
             self.planeThicknessLabel, self.planeThicknessSlider
         )
 

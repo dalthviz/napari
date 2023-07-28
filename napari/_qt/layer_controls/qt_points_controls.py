@@ -245,7 +245,9 @@ class QtPointsControls(QtLayerControls):
 
         controls_scroll = QScrollArea()
         controls_scroll.setWidgetResizable(True)
-        controls_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        controls_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         controls_widget = QWidget()
         controls_layout = QVBoxLayout()
         controls_layout.addWidget(self.baseSection)

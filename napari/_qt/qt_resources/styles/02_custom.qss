@@ -398,11 +398,11 @@ QCollapsible[emphasized="true"] {
   border-radius: 2px;
 }
 
-QCollapsible[emphasized="true"] QPushButton,
-QCollapsible[emphasized="true"] QPushButton:disabled,
-QCollapsible[emphasized="true"] QPushButton:hover,
-QCollapsible[emphasized="true"] QPushButton:pressed,
-QCollapsible[emphasized="true"] QPushButton:checked {
+QCollapsible[emphasized="true"] > QPushButton,
+QCollapsible[emphasized="true"] > QPushButton:disabled,
+QCollapsible[emphasized="true"] > QPushButton:hover,
+QCollapsible[emphasized="true"] > QPushButton:pressed,
+QCollapsible[emphasized="true"] > QPushButton:checked {
    background-color: {{ foreground }};
 }
 
