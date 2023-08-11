@@ -201,7 +201,7 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
         form_widget.setLayout(self._internal_layout)
 
         self.addWidget(form_widget)
-        # self._expand_collapse(QPropertyAnimation.Direction.Forward, animate=False, emit=False)
+        self.expand()
 
     def addRowToSection(self, *args):
         self._internal_layout.addRow(*args)
@@ -284,7 +284,7 @@ class QtLayerControls(QFrame):
             self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
 
-        self.baseSection = QtCollapsibleLayerControlsSection("base")
+        self.baseSection = QtCollapsibleLayerControlsSection("annotation")
         self.baseSection.addRowToSection(
             trans._('blending:'), self.blendComboBox
         )

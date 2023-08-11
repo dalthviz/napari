@@ -6,13 +6,14 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QButtonGroup,
     QCheckBox,
+    QGridLayout,
+    QHBoxLayout,
     QScrollArea,
     QVBoxLayout,
     QWidget,
 )
 
 from napari._qt.layer_controls.qt_layer_controls_base import (
-    LayerButtonsFlowLayout,
     QtCollapsibleLayerControlsSection,
     QtLayerControls,
 )
@@ -296,25 +297,34 @@ class QtShapesControls(QtLayerControls):
         self._on_editable_or_visible_change()
 
         buttons_widget = QWidget()
-        button_grid = LayerButtonsFlowLayout()
-        button_grid.addWidget(self.panzoom_button)  # , 0, 7)
-        button_grid.addWidget(self.polygon_button)  # , 1, 4)
-        button_grid.addWidget(self.line_button)  # , 1, 6)
-        button_grid.addWidget(self.path_button)  # , 1, 7)
-        button_grid.addWidget(self.polygon_lasso_button)  # , 1, 5)
-        button_grid.addWidget(self.rectangle_button)  # , 1, 3)
-        button_grid.addWidget(self.ellipse_button)  # , 1, 2)
-        button_grid.addWidget(self.direct_button)  # , 0, 5)
-        button_grid.addWidget(self.select_button)  # , 0, 6)
-        button_grid.addWidget(self.delete_button)  # , 0, 4)
-        button_grid.addWidget(self.vertex_insert_button)  # , 0, 3)
-        button_grid.addWidget(self.vertex_remove_button)  # , 0, 2)
-        button_grid.addWidget(self.move_front_button)  # , 1, 1)
-        button_grid.addWidget(self.move_back_button)  # , 1, 0)
-        # button_grid.setContentsMargins(5, 0, 0, 5)
+        buttons_grid = QWidget()
+        # button_grid = LayerButtonsFlowLayout()
+        button_grid_layout = QGridLayout()
+        button_grid_layout.addWidget(self.panzoom_button, 0, 0)
+        button_grid_layout.addWidget(self.polygon_button, 0, 1)
+        button_grid_layout.addWidget(self.line_button, 0, 2)
+        button_grid_layout.addWidget(self.path_button, 0, 3)
+        button_grid_layout.addWidget(self.polygon_lasso_button, 0, 4)
+        button_grid_layout.addWidget(self.rectangle_button, 0, 5)
+        button_grid_layout.addWidget(self.ellipse_button, 0, 6)
+        button_grid_layout.addWidget(self.direct_button, 0, 7)
+        button_grid_layout.addWidget(self.select_button, 1, 0)
+        button_grid_layout.addWidget(self.delete_button, 1, 1)
+        button_grid_layout.addWidget(self.vertex_insert_button, 1, 2)
+        button_grid_layout.addWidget(self.vertex_remove_button, 1, 3)
+        button_grid_layout.addWidget(self.move_front_button, 1, 4)
+        button_grid_layout.addWidget(self.move_back_button, 1, 5)
+        # button_grid.setColumnStretch(6, 1)
+        # button_grid.setColumnStretch(7, 1)
+        button_grid_layout.setContentsMargins(0, 0, 0, 0)
         # button_grid.setColumnStretch(0, 1)
         # button_grid.setSpacing(4)
-        buttons_widget.setLayout(button_grid)
+        buttons_grid.setLayout(button_grid_layout)
+
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addWidget(buttons_grid)
+        buttons_layout.addStretch(1)
+        buttons_widget.setLayout(buttons_layout)
 
         self.faceColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_face_color,
@@ -335,7 +345,7 @@ class QtShapesControls(QtLayerControls):
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb
 
-        self.shapesSection = QtCollapsibleLayerControlsSection("shapes")
+        self.shapesSection = QtCollapsibleLayerControlsSection("display")
         # self.shapesSection.addRowToSection(self.opacityLabel, self.opacitySlider)
         self.shapesSection.addRowToSection(
             trans._('edge width:'), self.widthSlider
