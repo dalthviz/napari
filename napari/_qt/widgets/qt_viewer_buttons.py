@@ -86,6 +86,7 @@ class QtLayerButtons(QFrame):
         layout.addWidget(self.newLabelsButton)
         layout.addStretch(0)
         layout.addWidget(self.deleteButton)
+        layout.setSpacing(6)
         self.setLayout(layout)
 
 
@@ -173,6 +174,7 @@ class QtViewerButtons(QFrame):
         layout.addWidget(self.gridViewButton)
         layout.addWidget(self.resetViewButton)
         layout.addStretch(0)
+        layout.setSpacing(6)
         self.setLayout(layout)
 
     def open_perspective_popup(self):

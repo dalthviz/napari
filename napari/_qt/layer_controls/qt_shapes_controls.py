@@ -314,11 +314,8 @@ class QtShapesControls(QtLayerControls):
         button_grid_layout.addWidget(self.vertex_remove_button, 1, 4)
         button_grid_layout.addWidget(self.move_front_button, 1, 5)
         button_grid_layout.addWidget(self.move_back_button, 1, 6)
-        # button_grid.setColumnStretch(6, 1)
-        # button_grid.setColumnStretch(7, 1)
         button_grid_layout.setContentsMargins(0, 0, 0, 0)
-        # button_grid.setColumnStretch(0, 1)
-        # button_grid.setSpacing(4)
+        button_grid_layout.setSpacing(6)
         buttons_grid.setLayout(button_grid_layout)
 
         buttons_layout = QHBoxLayout()
