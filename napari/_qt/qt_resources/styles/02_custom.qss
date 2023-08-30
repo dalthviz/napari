@@ -291,10 +291,16 @@ QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QA
   color: {{ text }};
 }
 
-QtLayerControls > QLabel#layer_name {
+QtLayerControls > QElidingLineEdit#layer_name {
+  background-color: {{ background }};
   font-weight: bold;
   margin: 0px;
   padding: 0px;
+}
+
+QtLayerControls > QElidingLineEdit#layer_name:focus {
+  background-color: {{ darken(background, 20) }};
+  selection-background-color: {{ lighten(current, 20) }};
 }
 
 QLabel[layer_type_icon_label="true"] {

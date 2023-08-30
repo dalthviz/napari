@@ -7,13 +7,14 @@ from qtpy.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QComboBox,
+    QHBoxLayout,
     QScrollArea,
     QVBoxLayout,
     QWidget,
 )
 
 from napari._qt.layer_controls.qt_layer_controls_base import (
-    LayerButtonsFlowLayout,
+    # LayerButtonsFlowLayout,
     QtCollapsibleLayerControlsSection,
     QtLayerControls,
 )
@@ -212,7 +213,7 @@ class QtPointsControls(QtLayerControls):
         self._on_editable_or_visible_change()
 
         buttons_widget = QWidget()
-        button_row = LayerButtonsFlowLayout()
+        button_row = QHBoxLayout()
         button_row.addWidget(self.panzoom_button)
         button_row.addWidget(self.addition_button)
         button_row.addWidget(self.delete_button)

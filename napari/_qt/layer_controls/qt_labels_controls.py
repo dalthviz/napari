@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 from superqt import QLargeIntSpinBox
 
 from napari._qt.layer_controls.qt_layer_controls_base import (
-    LayerButtonsFlowLayout,
+    # LayerButtonsFlowLayout,
     QtCollapsibleLayerControlsSection,
     QtLayerControls,
 )
@@ -253,7 +253,7 @@ class QtLabelsControls(QtLayerControls):
         # TODO: Probably this should be inside the base class and a
         # `addButton(button: QPushButton)` method should be added
         buttons_widget = QWidget()
-        button_row = LayerButtonsFlowLayout()
+        button_row = QHBoxLayout()
         button_row.addWidget(self.panzoom_button)
         button_row.addWidget(self.paint_button)
         button_row.addWidget(self.fill_button)
