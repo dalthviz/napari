@@ -374,6 +374,8 @@ class QtShapesControls(QtLayerControls):
         self.layout().addWidget(buttons_widget)
         self.layout().addWidget(controls_scroll)
 
+        self.baseSection.hide()
+
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when shapes layer mode changed.
 

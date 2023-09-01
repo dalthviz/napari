@@ -399,17 +399,20 @@ QtLayerControlsContainer QScrollBar:right-arrow {
 
 /* ---- Customize QCollapsible sections for layer controls ---- */
 
-QCollapsible[emphasized="true"] {
-  padding-top: 0px;
+QtLayerControlsContainer QCollapsible[emphasized="true"] {
+  padding: 0px;
+  margin: 0px;
   border-radius: 2px;
 }
 
-QCollapsible[emphasized="true"] > QPushButton,
-QCollapsible[emphasized="true"] > QPushButton:disabled,
-QCollapsible[emphasized="true"] > QPushButton:hover,
-QCollapsible[emphasized="true"] > QPushButton:pressed,
-QCollapsible[emphasized="true"] > QPushButton:checked {
+QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton,
+QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:disabled,
+QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:hover,
+QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:pressed,
+QtLayerControlsContainer QCollapsible[emphasized="true"] > QPushButton:checked {
    background-color: {{ foreground }};
+   padding: 0px;
+   margin: 0px;
 }
 
 /* ------------- DimsSliders --------- */

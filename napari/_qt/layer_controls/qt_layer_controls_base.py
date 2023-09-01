@@ -171,31 +171,47 @@ class QtCollapsibleLayerControlsSection(QCollapsible):
     """
 
     def __init__(self, title="", parent=None):
-        # TODO: How to handle theme change with the icons?
-        theme = get_settings().appearance.theme
+        super().__init__(
+            title=title,
+            parent=parent,
+        )
+        # Set themed icons
+        # TODO: Is there a better wat to handle a theme change to set icons?
+        self._setIconsForTheme()
+        get_settings().appearance.events.theme.connect(self._setIconsForTheme)
+
+        # Setup internal layout
+        self.content().layout().setContentsMargins(0, 0, 0, 0)
+        self.setProperty('emphasized', True)
+        form_widget = QWidget()
+        form_widget.setProperty('emphasized', True)
+        self._internal_layout = LayerFormLayout()
+        form_widget.setLayout(self._internal_layout)
+        self.addWidget(form_widget)
+
+        self.expand()
+
+    def expand(self, animate=True):
+        super().expand(animate=animate)
+        self._toggle_btn.setToolTip(trans._(f"Collapse {self._text} controls"))
+
+    def collapse(self, animate=True):
+        super().collapse(animate=animate)
+        self._toggle_btn.setToolTip(trans._(f"Expand {self._text} controls"))
+
+    def _setIconsForTheme(self, theme_event=None):
+        if theme_event:
+            theme = theme_event.value
+        else:
+            theme = get_settings().appearance.theme
         coll_icon = QColoredSVGIcon.from_resources('right_arrow').colored(
             theme=theme
         )
         exp_icon = QColoredSVGIcon.from_resources('down_arrow').colored(
             theme=theme
         )
-        super().__init__(
-            title=title,
-            parent=parent,
-            collapsedIcon=coll_icon,
-            expandedIcon=exp_icon,
-        )
-        self.content().layout().setContentsMargins(0, 0, 0, 0)
-        self.setProperty('emphasized', True)
-
-        form_widget = QWidget()
-        form_widget.setProperty('emphasized', True)
-
-        self._internal_layout = LayerFormLayout()
-        form_widget.setLayout(self._internal_layout)
-
-        self.addWidget(form_widget)
-        self.expand()
+        self.setCollapsedIcon(icon=coll_icon)
+        self.setExpandedIcon(icon=exp_icon)
 
     def addRowToSection(self, *args):
         self._internal_layout.addRow(*args)
@@ -285,6 +301,15 @@ class QtLayerControls(QFrame):
             trans._('blending:'), self.blendComboBox
         )
         self.baseSection.addRowToSection(self.opacityLabel, self.opacitySlider)
+
+    def add_button(self, button, row, column):
+        pass
+
+    def add_annotation_control(self, label_text, widget):
+        self.annotation_section.addRowToSection(label_text, widget)
+
+    def add_display_control(self, label_text, widget):
+        self.display_section.addRowToSection(label_text, widget)
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.

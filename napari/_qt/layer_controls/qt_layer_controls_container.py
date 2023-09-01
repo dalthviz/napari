@@ -29,6 +29,13 @@ layer_to_controls = {
 }
 
 
+# Add logic to handle controls widgets instanciation programmatically
+#   Implement logic to recieve layers and parse their attributes to generate control
+#   widgets in the different sections (display or annotation).
+#       Default mapping definition of attributes to widgets should be done taking into account the
+#       layer events connection and widgets signal connection to handlers (maybe an intermediate controlwidget class could be worthy.
+#       one that receives a layer list (multiple layers) and setups the widget/layer connection)
+# Buttons and modes still per layer type (still need for layer type to controls mapping)
 def create_qt_layer_controls(layer):
     """
     Create a qt controls widget for a layer based on its layer type.
