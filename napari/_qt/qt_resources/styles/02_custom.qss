@@ -452,6 +452,16 @@ QtAbout > QTextEdit{
   padding: 2px;
 }
 
+/* ------------ Shortcut tablewidget ----------- */
+
+QTableWidget#shortcuts_table::item {
+  padding: 6px;
+}
+
+QTableWidget#shortcuts_table > QHeaderView {
+  border-bottom: 2px solid white;
+}
+
 /* ------------ Shortcut Editor ------------ */
 
 ShortcutEditor QHeaderView::section {

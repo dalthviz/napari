@@ -76,6 +76,7 @@ class ShortcutEditor(QWidget):
         self.layer_combo_box = QComboBox(self)
         self._label = QLabel(self)
         self._table = QTableWidget(self)
+        self._table.setObjectName("shortcuts_table")
         self._table.setSelectionBehavior(QAbstractItemView.SelectItems)
         self._table.setSelectionMode(QAbstractItemView.SingleSelection)
         self._table.setShowGrid(False)
@@ -191,11 +192,8 @@ class ShortcutEditor(QWidget):
             self._table.cellChanged.disconnect(self._set_keybinding)
         self._table.clearContents()
 
-        # Table styling set up.
+        # Table headers styling set up.
         self._table.horizontalHeader().setStretchLastSection(True)
-        self._table.horizontalHeader().setStyleSheet(
-            'border-bottom: 2px solid white;'
-        )
 
         # Get all actions for the layer.
         actions = self.key_bindings_strs[layer_str]
@@ -226,9 +224,6 @@ class ShortcutEditor(QWidget):
             self._table.setColumnWidth(self._shortcut_col2, 145)
             self._table.setColumnWidth(self._icon_col, 35)
             self._table.setWordWrap(True)
-
-            # Add some padding to rows
-            self._table.setStyleSheet("QTableView::item { padding: 6px; }")
 
             # Go through all the actions in the layer and add them to the table.
             for row, (action_name, action) in enumerate(actions.items()):
