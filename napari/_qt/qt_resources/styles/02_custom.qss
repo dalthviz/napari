@@ -454,7 +454,7 @@ QtAbout > QTextEdit{
 
 /* ------------ Shortcut tablewidget ----------- */
 
-QTableWidget#shortcuts_table::item {
+QTableWidget#shortcuts_table QTableView::item {
   padding: 6px;
 }
 

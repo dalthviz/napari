@@ -304,6 +304,7 @@ class ShortcutEditor(QWidget):
         current_item = self._table.currentItem()
         for row1, (action_name, action) in enumerate(actions_all.items()):
             shortcuts = action_manager._shortcuts.get(action_name, [])
+            formatted_shortcut = Shortcut(new_shortcut).platform
 
             if new_shortcut not in shortcuts:
                 continue
@@ -316,8 +317,10 @@ class ShortcutEditor(QWidget):
 
                 # show warning message
                 message = trans._(
-                    "The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.",
-                    new_shortcut=new_shortcut,
+                    "The keybinding <b>{formatted_shortcut}</b>  is already assigned "
+                    "to <b>{action_description}</b>; change or clear that shortcut "
+                    "before assigning <b>{formatted_shortcut}</b> to this one.",
+                    formatted_shortcut=formatted_shortcut,
                     action_description=action.description,
                 )
                 self._show_warning(row, message)
@@ -328,10 +331,9 @@ class ShortcutEditor(QWidget):
 
                 return False
 
-            # This shortcut was here.  Reformat and reset text.
-            format_shortcut = Shortcut(new_shortcut).platform
+            # This shortcut was here. Reset text with formatted version.
             with lock_keybind_update(self):
-                current_item.setText(format_shortcut)
+                current_item.setText(formatted_shortcut)
 
         return True
 
