@@ -116,6 +116,7 @@ def _add_future_data(
     _from_tuple=True,
     viewer: Optional[viewer.Viewer] = None,
     source: Optional[dict] = None,
+    _future_callback_wrapper: Optional[Callable] = None,
 ):
     """Process a Future object.
 
@@ -136,6 +137,10 @@ def _add_future_data(
     _from_tuple : bool, optional
         (only for internal use). True if the future returns `LayerDataTuple`,
         False if it returns one of the `LayerData` types.
+    _future_callback_wrapper : Callable, optional
+        (only for internal use). Callable that will wrap the future callback
+        function, currently is specifically used to pass `superqt.ensure_main_thread`
+        to prevent errors when magicgui widgets are being used
     """
 
     # when the future is done, add layer data to viewer, dispatching
@@ -154,14 +159,8 @@ def _add_future_data(
             _add_layer_data_to_viewer(f.result(), **add_kwargs)
         _FUTURES.discard(future)
 
-    # We need the callback to happen in the main thread...
-    # This still works (no-op) in a headless environment, but
-    # we could be even more granular with it, with a function
-    # that checks if we're actually in a QApp before wrapping.
-    # with suppress(ImportError):
-    #     from superqt.utils import ensure_main_thread
-
-    #     _on_future_ready = ensure_main_thread(_on_future_ready)
+    if _future_callback_wrapper:
+        _on_future_ready = _future_callback_wrapper(_on_future_ready)
 
     future.add_done_callback(_on_future_ready)
     _FUTURES.add(future)

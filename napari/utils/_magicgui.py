@@ -17,6 +17,7 @@ import weakref
 from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
+from superqt import ensure_main_thread
 from typing_extensions import get_args
 
 from napari.utils._proxies import PublicOnlyProxy
@@ -201,6 +202,7 @@ def add_future_data(gui, future: Future, return_type, _from_tuple=True):
             _from_tuple=_from_tuple,
             viewer=viewer,
             source={'widget': gui},
+            _future_callback_wrapper=ensure_main_thread,
         )
 
 
