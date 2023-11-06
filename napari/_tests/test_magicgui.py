@@ -118,6 +118,45 @@ def test_magicgui_add_future_data(
     _assert_stuff()
 
 
+@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+def test_magicgui_add_future_data_via_threadpoolexecutor(
+    qtbot, make_napari_viewer, LayerType, data, ndim
+):
+    """Test that annotating with Future and using ThreadPoolExecutor works."""
+    from concurrent.futures import Future, ThreadPoolExecutor
+
+    pool = ThreadPoolExecutor()
+
+    viewer = make_napari_viewer(show=True)
+    dtype = getattr(types, f'{LayerType.__name__}Data')
+
+    @magicgui
+    # where `dtype` is something like napari.types.ImageData
+    def add_data() -> Future[dtype]:  # type: ignore
+        # use ThreadPoolExecutor to do data retrieval while simulating
+        # that the data isn't immediately ready when function returns
+        def _get_data():
+            import time
+
+            time.sleep(1)
+
+            return data
+
+        return pool.submit(_get_data)
+
+    viewer.window.add_dock_widget(add_data)
+
+    def _assert_stuff():
+        assert len(viewer.layers) == 1
+        assert isinstance(viewer.layers[0], LayerType)
+        assert viewer.layers[0].source.widget == add_data
+
+    assert len(viewer.layers) == 0
+    with qtbot.waitSignal(viewer.layers.events.inserted):
+        add_data()
+    _assert_stuff()
+
+
 def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
     """Test that annotating with FunctionWorker works."""
     from napari.qt.threading import FunctionWorker, thread_worker
