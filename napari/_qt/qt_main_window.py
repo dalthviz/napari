@@ -23,6 +23,8 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
+from packaging.version import parse
+from qtpy import PYSIDE_VERSION
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -1545,7 +1547,8 @@ class Window:
             self._teardown()
             self._qt_viewer.close()
             self._qt_window.close()
-            del self._qt_window
+            if not PYSIDE_VERSION or parse(PYSIDE_VERSION) < parse("6.4"):
+                del self._qt_window
 
     def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""

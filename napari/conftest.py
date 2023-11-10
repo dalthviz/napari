@@ -428,9 +428,9 @@ def mock_console(request):
             self.kernel_client = None
             self.kernel_manager = None
 
-        _update_theme = Mock()
-        push = Mock()
-        closeEvent = QtConsole.closeEvent
+    FakeQtConsole._update_theme = Mock()
+    FakeQtConsole.push = Mock()
+    FakeQtConsole.closeEvent = QtConsole.closeEvent
 
     with patch("napari_console.QtConsole", FakeQtConsole):
         yield
