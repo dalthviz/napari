@@ -298,6 +298,7 @@ class QtLabelsControls(QtLayerControls):
         self.layout().addRow(trans._('color mode:'), self.colorModeComboBox)
         self.layout().addRow(trans._('contour:'), self.contourSpinBox)
         self.layout().addRow(trans._('n edit dim:'), self.ndimSpinBox)
+        self.layout().addRow(self.scaleLabel, self.scaleControl)
         self.layout().addRow(trans._('contiguous:'), self.contigCheckBox)
         self.layout().addRow(
             trans._('preserve\nlabels:'), self.preserveLabelsCheckBox

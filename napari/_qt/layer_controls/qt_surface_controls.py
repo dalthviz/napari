@@ -51,6 +51,7 @@ class QtSurfaceControls(QtBaseImageControls):
         self.layout().addRow(
             trans._('contrast limits:'), self.contrastLimitsSlider
         )
+        self.layout().addRow(self.scaleLabel, self.scaleControl)
         self.layout().addRow(trans._('auto-contrast:'), self.autoScaleBar)
         self.layout().addRow(trans._('gamma:'), self.gammaSlider)
         self.layout().addRow(trans._('colormap:'), colormap_layout)

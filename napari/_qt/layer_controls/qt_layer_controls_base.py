@@ -1,6 +1,16 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
+from qtpy.QtWidgets import (
+    QComboBox,
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QWidget,
+)
+from superqt import QLabeledDoubleSlider
 
+from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
 from napari.layers.base.base import Layer
@@ -9,6 +19,104 @@ from napari.utils.translations import trans
 
 # opaque and minimum blending do not support changing alpha (opacity)
 NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
+
+
+class QtScaleControl(QWidget):
+    def __init__(self, layer, parent=None):
+        super().__init__(parent)
+        self.layer = layer
+        self.layer.events.scale.connect(self._on_scale_change)
+
+        self.setProperty("emphasized", True)
+        self._sliders = []
+
+        scaleLayout = QFormLayout()
+        scaleLayout.setContentsMargins(0, 0, 0, 0)
+        for idx, scale in enumerate(self.layer.scale):
+            scale_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
+            scale_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            scale_slider.setMinimum(0.1)
+            scale_slider.setMaximum(10)
+            scale_slider.setSingleStep(0.01)
+            scale_slider.setValue(scale)
+            scale_slider.valueChanged.connect(self.changeScale)
+            self._sliders.append(scale_slider)
+            scaleLayout.addRow(str(idx), scale_slider)
+        self.setLayout(scaleLayout)
+
+    def changeScale(self, value):
+        with self.layer.events.blocker(self._on_scale_change):
+            new_scale = []
+            for scale in self._sliders:
+                new_scale.append(scale.value())
+            self.layer.scale = new_scale
+
+    def _on_scale_change(self):
+        with self.layer.events.scale.blocker():
+            for idx, slider in enumerate(self._sliders):
+                slider.setValue(self.layer.scale[idx])
+
+    def show_popup(self):
+        scale_popup = QtScalePopup(self.layer, parent=self)
+        scale_popup.move_to('top', min_length=650)
+        scale_popup.show()
+
+    def mousePressEvent(self, event):
+        """Update the slider, or, on right-click, pop-up an expanded slider.
+
+        The expanded slider provides finer control, directly editable values,
+        and the ability to change the available range of the sliders.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        if event.button() == Qt.MouseButton.RightButton:
+            self.show_popup()
+        else:
+            super().mousePressEvent(event)
+
+
+class QtScalePopup(QtPopup):
+    def __init__(self, layer: Layer, parent=None) -> None:
+        super().__init__(parent)
+
+        self.layer = layer
+        self._sliders = []
+        layout = QHBoxLayout()
+        scaleLayout = QFormLayout()
+        scaleLayout.setContentsMargins(0, 0, 0, 0)
+
+        for idx, scale in enumerate(self.layer.scale):
+            scale_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
+            scale_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            scale_slider.setMinimum(0.1)
+            scale_slider.setMaximum(10)
+            scale_slider.setSingleStep(0.01)
+            scale_slider.setValue(scale)
+            scale_slider.valueChanged.connect(self.changeScale)
+            self._sliders.append(scale_slider)
+            scaleLayout.addRow(str(idx), scale_slider)
+        layout.addLayout(scaleLayout)
+
+        reset_btn = QPushButton("reset")
+        reset_btn.setToolTip(trans._("Reset scale"))
+        reset_btn.setFixedWidth(45)
+        reset_btn.clicked.connect(self.reset)
+        layout.addWidget(reset_btn)
+
+        self.frame.setLayout(layout)
+
+    def changeScale(self, value):
+        new_scale = []
+        for scale in self._sliders:
+            new_scale.append(scale.value())
+        self.layer.scale = new_scale
+
+    def reset(self):
+        for scale in self._sliders:
+            scale.setValue(1.0)
 
 
 class LayerFormLayout(QFormLayout):
@@ -84,6 +192,10 @@ class QtLayerControls(QFrame):
         self.opacityLabel.setEnabled(
             self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
+
+        # scale widget
+        self.scaleLabel = QLabel(trans._('scale:'))
+        self.scaleControl = QtScaleControl(layer, self)
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.

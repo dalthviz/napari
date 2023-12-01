@@ -91,6 +91,7 @@ class QtTracksControls(QtLayerControls):
         self.layout().addRow(trans._('colormap:'), self.colormap_combobox)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
+        self.layout().addRow(self.scaleLabel, self.scaleControl)
         self.layout().addRow(trans._('tail width:'), self.tail_width_slider)
         self.layout().addRow(trans._('tail length:'), self.tail_length_slider)
         self.layout().addRow(trans._('head length:'), self.head_length_slider)

@@ -326,6 +326,7 @@ class QtShapesControls(QtLayerControls):
         self.layout().addRow(button_grid)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(trans._('edge width:'), self.widthSlider)
+        self.layout().addRow(self.scaleLabel, self.scaleControl)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
         self.layout().addRow(trans._('face color:'), self.faceColorEdit)
         self.layout().addRow(trans._('edge color:'), self.edgeColorEdit)
