@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QApplication,
     QComboBox,
     QHBoxLayout,
+    QHeaderView,
     QItemDelegate,
     QKeySequenceEdit,
     QLabel,
@@ -230,11 +231,14 @@ class ShortcutEditor(QWidget):
             # Hide the column with action names.  These are kept here for reference when needed.
             self._table.setColumnHidden(self._action_col, True)
 
-            # Column set up.
-            self._table.setColumnWidth(self._action_name_col, 370)
-            self._table.setColumnWidth(self._shortcut_col, 190)
-            self._table.setColumnWidth(self._shortcut_col2, 145)
-            self._table.setColumnWidth(self._icon_col, 35)
+            # Column and rows size set up.
+            self._table.horizontalHeader().setMaximumSectionSize(370)
+            self._table.horizontalHeader().setSectionResizeMode(
+                QHeaderView.ResizeMode.ResizeToContents
+            )
+            self._table.verticalHeader().setSectionResizeMode(
+                QHeaderView.ResizeMode.ResizeToContents
+            )
             self._table.setWordWrap(True)
 
             # Add some padding to rows
