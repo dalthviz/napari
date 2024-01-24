@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from qtpy.QtCore import QSize, Qt
+from qtpy.QtCore import QSize, QSortFilterProxyModel, Qt
 from qtpy.QtGui import QImage
 
-from napari._qt.containers._base_item_model import ItemRole, ThumbnailRole
+from napari._qt.containers._base_item_model import _BaseEventedItemModel, ItemRole, SortRole, ThumbnailRole
 from napari._qt.containers._layer_delegate import LayerDelegate
-
-# from .qt_layer_list import ReverseProxyModel
 from napari._qt.containers.qt_tree_model import QtNodeTreeModel
 from napari._qt.containers.qt_tree_view import QtNodeTreeView
 from napari.layers import Layer
@@ -18,6 +16,32 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
     from napari.layers.layergroup import LayerGroup
+
+
+class ReverseProxyTreeModel(QSortFilterProxyModel):
+    """Proxy Model that reverses the view order of a _BaseEventedItemModel with tree like structure features."""
+
+    def __init__(self, model: _BaseEventedItemModel) -> None:
+        super().__init__()
+        self.setSourceModel(model)
+        self.setSortRole(SortRole)
+        self.sort(0, Qt.SortOrder.DescendingOrder)
+
+    def dropMimeData(self, data, action, destRow, col, parent):
+        """Handle destination row for dropping with reversed indices and parent index change."""
+        source_parent = self.mapToSource(parent)
+        
+        if source_parent.isValid():
+            # Case item will do a parent change
+            if destRow == -1 and col == -1:
+                return self.sourceModel().dropMimeData(data, action, destRow, col, source_parent)
+            # Case item will change place inside same parent
+            row = self.sourceModel().rowCount(source_parent) - destRow
+            return self.sourceModel().dropMimeData(data, action, row, col, source_parent)
+        else:
+            # Case parent is the root base index
+            row = self.sourceModel().rowCount(parent) - destRow
+            return self.sourceModel().dropMimeData(data, action, row, col, parent)
 
 
 class QtLayerTreeModel(QtNodeTreeModel[Layer]):
@@ -122,7 +146,7 @@ class QtLayerTreeView(QtNodeTreeView):
         # # This reverses the order of the items in the view,
         # # so items at the end of the list are at the top.
         # # FIXME! not working at the moment, and causing test segfaults
-        # self.setModel(ReverseProxyModel(self.model()))
+        self.setModel(ReverseProxyTreeModel(self.model()))
 
     def viewOptions(self) -> QStyleOptionViewItem:
         options = super().viewOptions()

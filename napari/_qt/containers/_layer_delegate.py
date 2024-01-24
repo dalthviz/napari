@@ -120,6 +120,8 @@ class LayerDelegate(QStyledItemDelegate):
         # MAGICNUMBER: numbers from the margin applied in the stylesheet to
         # QtLayerTreeView::item
         thumb_rect = option.rect.translated(-2, 2)
+        if not index.data(Qt.ItemDataRole.SizeHintRole):
+            return
         h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
         thumb_rect.setWidth(h)
         thumb_rect.setHeight(h)
