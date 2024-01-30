@@ -26,19 +26,47 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
 
         # avoid circular import
         from napari._app_model.context import create_context
+
+        # from napari._app_model.context._layerlist_context import (
+        #     LayerListContextKeys,
+        # )
+
+        self.events.connect(self._handle_child_events)
+        # self._ctx = create_context(self)
+        # if self._ctx is not None:  # happens during Viewer type creation
+        #     self._ctx_keys = LayerListContextKeys(self._ctx)
+
+        #     self.selection.events.changed.connect(self._ctx_keys.update)
+        # # temporary: see note in _on_selection_event
+        # # self.selection.events.changed.connect(self._on_selection_changed)
+
         from napari._app_model.context._layerlist_context import (
             LayerListContextKeys,
+            LayerListSelectionContextKeys,
         )
 
-        self.refresh(None)  # TODO: why...
-        self.events.connect(self._handle_child_events)
         self._ctx = create_context(self)
         if self._ctx is not None:  # happens during Viewer type creation
             self._ctx_keys = LayerListContextKeys(self._ctx)
 
-            self.selection.events.changed.connect(self._ctx_keys.update)
+            # self.selection.events.changed.connect(self._ctx_keys.update)
+            self.events.inserted.connect(self._ctx_keys.update)
+            self.events.removed.connect(self._ctx_keys.update)
+
         # temporary: see note in _on_selection_event
-        self.selection.events.changed.connect(self._on_selection_changed)
+        # self.selection.events.changed.connect(self._on_selection_changed)
+        self._selection_ctx = create_context(self)
+        if (
+            self._selection_ctx is not None
+        ):  # happens during Viewer type creation
+            self._selection_ctx_keys = LayerListSelectionContextKeys(
+                self._selection_ctx
+            )
+            self.selection.events.changed.connect(
+                self._selection_ctx_keys.update
+            )
+
+        self.refresh(None)  # TODO: why...
 
     def add_group(self, index=-1):
         lg = LayerGroup()
@@ -144,6 +172,10 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
         -------
         extent_data : array, shape (2, D)
         """
+        if len(self) == 0:
+            min_v = np.asarray([-0.5] * self.ndim)
+            max_v = np.asarray([511.5] * self.ndim)
+            return np.vstack([min_v, max_v])
         return combine_extents([c._extent_data for c in self])
 
     @property

@@ -5,11 +5,19 @@ from typing import TYPE_CHECKING, Any
 from qtpy.QtCore import QSize, QSortFilterProxyModel, Qt
 from qtpy.QtGui import QImage
 
-from napari._qt.containers._base_item_model import _BaseEventedItemModel, ItemRole, SortRole, ThumbnailRole
+from napari._qt.containers._base_item_model import (
+    LoadedRole,
+    SortRole,
+    ThumbnailRole,
+    _BaseEventedItemModel,
+)
 from napari._qt.containers._layer_delegate import LayerDelegate
 from napari._qt.containers.qt_tree_model import QtNodeTreeModel
 from napari._qt.containers.qt_tree_view import QtNodeTreeView
 from napari.layers import Layer
+from napari.settings import get_settings
+from napari.utils.translations import trans
+from napari.viewer import current_viewer
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QModelIndex
@@ -30,24 +38,27 @@ class ReverseProxyTreeModel(QSortFilterProxyModel):
     def dropMimeData(self, data, action, destRow, col, parent):
         """Handle destination row for dropping with reversed indices and parent index change."""
         source_parent = self.mapToSource(parent)
-        
+
         if source_parent.isValid():
             # Case item will do a parent change
             if destRow == -1 and col == -1:
-                return self.sourceModel().dropMimeData(data, action, destRow, col, source_parent)
+                return self.sourceModel().dropMimeData(
+                    data, action, destRow, col, source_parent
+                )
             # Case item will change place inside same parent
             row = self.sourceModel().rowCount(source_parent) - destRow
-            return self.sourceModel().dropMimeData(data, action, row, col, source_parent)
-        else:
-            # Case parent is the root base index
-            row = self.sourceModel().rowCount(parent) - destRow
-            return self.sourceModel().dropMimeData(data, action, row, col, parent)
+            return self.sourceModel().dropMimeData(
+                data, action, row, col, source_parent
+            )
+
+        # Case parent is the root base index
+        row = self.sourceModel().rowCount(parent) - destRow
+        return self.sourceModel().dropMimeData(data, action, row, col, parent)
 
 
 class QtLayerTreeModel(QtNodeTreeModel[Layer]):
     def __init__(self, root: LayerGroup, parent: QWidget = None):
         super().__init__(root, parent)
-        self.data
         self.setRoot(root)
 
     # TODO: there's a lot of duplicated logic from QtLayerListModel here
@@ -57,8 +68,17 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
         if not index.isValid():
             return None
         layer = self.getItem(index)
-        if role == ItemRole:  # custom role: return the layer
-            return layer
+        viewer = current_viewer()
+        if layer.is_group():
+            layer_loaded = all(child.loaded for child in layer)
+        else:
+            layer_loaded = layer.loaded
+        # Playback with async slicing causes flickering between the thumbnail
+        # and loading animation in some cases due quick changes in the loaded
+        # state, so report as unloaded in that case to avoid that.
+        if get_settings().experimental.async_ and (viewer := current_viewer()):
+            viewer_playing = viewer.window._qt_viewer.dims.is_playing
+            layer_loaded = layer_loaded and not viewer_playing
         if role == Qt.ItemDataRole.DisplayRole:  # used for item text
             return layer.name
         if role == Qt.ItemDataRole.TextAlignmentRole:  # alignment of the text
@@ -67,15 +87,27 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
             # used to populate line edit when editing
             return layer.name
         if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
-            return layer.get_source_str()
+            layer_source_info = layer.get_source_str()
+            if layer_loaded:
+                return layer_source_info
+            return trans._('{source} (loading)', source=layer_source_info)
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
+            # if layer.is_group():
             if layer.visible:
                 parents_visible = all(p._visible for p in layer.iter_parents())
-                return Qt.Checked if parents_visible else Qt.PartiallyChecked
-            else:
-                return Qt.Unchecked
+                return (
+                    Qt.CheckState.Checked
+                    if parents_visible
+                    else Qt.CheckState.PartiallyChecked
+                )
+            return Qt.CheckState.Unchecked
+            # return (
+            #     Qt.CheckState.Checked
+            #     if layer.visible
+            #     else Qt.CheckState.Unchecked
+            # )
         if role == Qt.ItemDataRole.SizeHintRole:  # determines size of item
             return QSize(200, 34)
         if role == ThumbnailRole:  # return the thumbnail
@@ -86,6 +118,8 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
                 thumbnail.shape[0],
                 QImage.Format_RGBA8888,
             )
+        if role == LoadedRole:
+            return layer_loaded
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.
         # if role == Qt.ItemDataRole.DecorationRole:  # icon to show
@@ -109,6 +143,13 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
         self.dataChanged.emit(index, index, [role])
         return True
 
+    def all_loaded(self):
+        """Return if all the layers are loaded."""
+        return all(
+            self.index(row, 0).data(LoadedRole)
+            for row in range(self.rowCount())
+        )
+
     def _process_event(self, event):
         # The model needs to emit `dataChanged` whenever data has changed
         # for a given index, so that views can update themselves.
@@ -122,6 +163,7 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
             'thumbnail': ThumbnailRole,
             'visible': Qt.ItemDataRole.CheckStateRole,
             'name': Qt.ItemDataRole.DisplayRole,
+            'loaded': LoadedRole,
         }.get(event.type)
         roles = [role] if role is not None else []
         top = self.nestedIndex(event.index)
