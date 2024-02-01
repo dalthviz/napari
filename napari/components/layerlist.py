@@ -344,19 +344,17 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
         new_layer.events._extent_augmented.connect(self._clean_cache)
         super().insert(index, new_layer)
 
-    def _process_delete_item(self, item: Layer):
-        super()._process_delete_item(item)
-        item.events.extent.disconnect(self._clean_cache)
-        self._clean_cache()
+    def remove_selected(self):
+        """Remove selected layers from LayerList, but first unlink them."""
+        if not self.selection:
+            return
+        self.unlink_layers(self.selection)
+        super().remove_selected()
 
-    def _clean_cache(self):
-        cached_properties = (
-            'extent',
-            '_extent_world',
-            '_step_size',
-            '_ranges',
-        )
-        [self.__dict__.pop(p, None) for p in cached_properties]
+    def toggle_selected_visibility(self):
+        """Toggle visibility of selected layers"""
+        for layer in self.selection:
+            layer.visible = not layer.visible
 
     @cached_property
     def _extent_world(self) -> np.ndarray:
