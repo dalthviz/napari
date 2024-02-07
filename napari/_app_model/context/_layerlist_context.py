@@ -281,3 +281,8 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._("True when there is a shapes layer without data selected."),
         _empty_shapes_layer_selected,
     )
+
+    def update_by_selection(self, selection):
+        """Update context with the given selection."""
+        for k, get in self._getters.items():
+            setattr(self, k, get(selection))

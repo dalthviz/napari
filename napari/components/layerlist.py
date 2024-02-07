@@ -107,6 +107,9 @@ class LayerList(SelectableEventedList[Layer]):
                 self._selection_ctx_keys.update
             )
 
+    def selection_ctx_update(self):
+        self._selection_ctx_keys.update_by_selection(self.selection)
+
     def _process_delete_item(self, item: Layer):
         super()._process_delete_item(item)
         item.events.extent.disconnect(self._clean_cache)

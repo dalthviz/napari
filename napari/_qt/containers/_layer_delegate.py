@@ -314,5 +314,6 @@ class LayerDelegate(QStyledItemDelegate):
             )
 
         layer_list: LayerList = model.sourceModel()._root
+        layer_list.selection_ctx_update()
         self._context_menu.update_from_context(get_context(layer_list))
         self._context_menu.exec_(pos)
