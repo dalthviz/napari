@@ -6,23 +6,45 @@ from napari.utils.misc import StringEnum
 from napari.utils.translations import trans
 
 InterpolationStr = Literal[
-    "bessel",
-    "cubic",
-    "linear",
-    "blackman",
-    "catrom",
-    "gaussian",
-    "hamming",
-    "hanning",
-    "hermite",
-    "kaiser",
-    "lanczos",
-    "mitchell",
-    "nearest",
-    "spline16",
-    "spline36",
-    "custom",
+    'bessel',
+    'cubic',
+    'linear',
+    'blackman',
+    'catrom',
+    'gaussian',
+    'hamming',
+    'hanning',
+    'hermite',
+    'kaiser',
+    'lanczos',
+    'mitchell',
+    'nearest',
+    'spline16',
+    'spline36',
+    'custom',
 ]
+
+
+class Mode(StringEnum):
+    """Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
+    allows for normal interactivity with the canvas.
+
+    The SELECT mode allows for entire shapes to be selected, moved and
+    resized.
+
+    The DIRECT mode allows for shapes to be selected and their individual
+    vertices to be moved.
+
+    The VERTEX_INSERT and VERTEX_REMOVE modes allow for individual
+    vertices either to be added to or removed from shapes that are already
+    selected. Note that shapes cannot be selected in this mode.
+
+    The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
+    modes all allow for their corresponding shape type to be added.
+    """
+
+    PAN_ZOOM = auto()
+    TRANSFORM = auto()
 
 
 class Interpolation(StringEnum):
@@ -51,15 +73,17 @@ class Interpolation(StringEnum):
     SPLINE36 = auto()
     CUSTOM = auto()
 
+    value: InterpolationStr
+
     @classmethod
     def view_subset(
         cls,
     ) -> Tuple[
-        "Interpolation",
-        "Interpolation",
-        "Interpolation",
-        "Interpolation",
-        "Interpolation",
+        'Interpolation',
+        'Interpolation',
+        'Interpolation',
+        'Interpolation',
+        'Interpolation',
     ]:
         return (
             cls.CUBIC,
@@ -107,13 +131,13 @@ class ImageRendering(StringEnum):
 
 
 ImageRenderingStr = Literal[
-    "translucent",
-    "additive",
-    "iso",
-    "mip",
-    "minip",
-    "attenuated_mip",
-    "average",
+    'translucent',
+    'additive',
+    'iso',
+    'mip',
+    'minip',
+    'attenuated_mip',
+    'average',
 ]
 
 

@@ -5,7 +5,14 @@ from typing import TYPE_CHECKING
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QWidget,
+)
 from superqt import QDoubleRangeSlider
 
 from napari._qt.layer_controls.qt_colormap_combobox import QtColormapComboBox
@@ -71,6 +78,7 @@ class QtBaseImageControls(QtLayerControls):
     def __init__(self, layer: Image) -> None:
         super().__init__(layer)
 
+        self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.contrast_limits.connect(
@@ -80,8 +88,85 @@ class QtBaseImageControls(QtLayerControls):
             self._on_contrast_limits_range_change
         )
 
+        from napari._qt.widgets.qt_mode_buttons import (
+            QtModeRadioButton,
+        )
+        from napari.layers.image._image_constants import Mode
+        from napari.utils.action_manager import action_manager
+
+        def _radio_button(
+            parent,
+            btn_name,
+            mode,
+            action_name,
+            extra_tooltip_text='',
+            **kwargs,
+        ):
+            """
+            Convenience local function to create a RadioButton and bind it to
+            an action at the same time.
+
+            Parameters
+            ----------
+            parent : Any
+                Parent of the generated QtModeRadioButton
+            btn_name : str
+                name fo the button
+            mode : Enum
+                Value Associated to current button
+            action_name : str
+                Action triggered when button pressed
+            extra_tooltip_text : str
+                Text you want added after the automatic tooltip set by the
+                action manager
+            **kwargs:
+                Passed to QtModeRadioButton
+
+            Returns
+            -------
+            button: QtModeRadioButton
+                button bound (or that will be bound to) to action `action_name`
+
+            Notes
+            -----
+            When shortcuts are modifed/added/removed via the action manager, the
+            tooltip will be updated to reflect the new shortcut.
+            """
+            action_name = f'napari:{action_name}'
+            btn = QtModeRadioButton(parent, btn_name, mode, **kwargs)
+            action_manager.bind_button(
+                action_name,
+                btn,
+                extra_tooltip_text='',
+            )
+            return btn
+
+        self.panzoom_button = _radio_button(
+            layer,
+            'pan_zoom',
+            Mode.PAN_ZOOM,
+            'activate_image_pan_zoom_mode',
+            extra_tooltip_text=trans._('(or hold Space)'),
+            checked=True,
+        )
+        self.transform_button = _radio_button(
+            layer, 'pan', Mode.TRANSFORM, 'activate_image_transform_mode'
+        )
+
+        self.button_group = QButtonGroup(self)
+        self.button_group.addButton(self.panzoom_button)
+        self.button_group.addButton(self.transform_button)
+        # self._on_editable_or_visible_change()
+
+        self.button_grid = QGridLayout()
+        self.button_grid.addWidget(self.panzoom_button, 0, 6)
+        self.button_grid.addWidget(self.transform_button, 0, 7)
+        self.button_grid.setContentsMargins(5, 0, 0, 5)
+        self.button_grid.setColumnStretch(0, 1)
+        self.button_grid.setSpacing(4)
+
         comboBox = QtColormapComboBox(self)
-        comboBox.setObjectName("colormapComboBox")
+        comboBox.setObjectName('colormapComboBox')
         comboBox._allitems = set(self.layer.colormaps)
 
         for name, cm in AVAILABLE_COLORMAPS.items():
@@ -110,7 +195,7 @@ class QtBaseImageControls(QtLayerControls):
         connect_setattr(
             self.contrastLimitsSlider.valueChanged,
             self.layer,
-            "contrast_limits",
+            'contrast_limits',
         )
         connect_setattr(
             self.contrastLimitsSlider.rangeChanged,
@@ -143,6 +228,45 @@ class QtBaseImageControls(QtLayerControls):
             Colormap name.
         """
         self.layer.colormap = self.colormapComboBox.currentData()
+
+    def _on_mode_change(self, event):
+        """Update ticks in checkbox widgets when shapes layer mode changed.
+
+        Available modes for shapes layer are:
+        * SELECT
+        * DIRECT
+        * PAN_ZOOM
+        * ADD_RECTANGLE
+        * ADD_ELLIPSE
+        * ADD_LINE
+        * ADD_PATH
+        * ADD_POLYGON
+        * VERTEX_INSERT
+        * VERTEX_REMOVE
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+
+        Raises
+        ------
+        ValueError
+            Raise error if event.mode is not ADD, PAN_ZOOM, or SELECT.
+        """
+        from napari.layers.image._image_constants import Mode
+
+        mode_buttons = {
+            Mode.PAN_ZOOM: self.panzoom_button,
+            Mode.TRANSFORM: self.transform_button,
+        }
+
+        if event.mode in mode_buttons:
+            mode_buttons[event.mode].setChecked(True)
+        elif event.mode != Mode.TRANSFORM:
+            raise ValueError(
+                trans._("Mode '{mode}'not recognized", mode=event.mode)
+            )
 
     def _on_contrast_limits_change(self):
         """Receive layer model contrast limits change event and update slider."""
@@ -224,9 +348,9 @@ class AutoScaleButtons(QWidget):
         auto_btn.setCheckable(True)
         auto_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
-        connect_no_arg(once_btn.clicked, layer, "reset_contrast_limits")
-        connect_setattr(auto_btn.toggled, layer, "_keep_auto_contrast")
-        connect_no_arg(auto_btn.clicked, layer, "reset_contrast_limits")
+        connect_no_arg(once_btn.clicked, layer, 'reset_contrast_limits')
+        connect_setattr(auto_btn.toggled, layer, '_keep_auto_contrast')
+        connect_no_arg(auto_btn.clicked, layer, 'reset_contrast_limits')
 
         self.layout().addWidget(once_btn)
         self.layout().addWidget(auto_btn)
@@ -246,18 +370,23 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         self.slider.setSingleStep(10**-decimals)
         self.slider.setValue(layer.contrast_limits)
 
-        connect_setattr(self.slider.valueChanged, layer, "contrast_limits")
+        connect_setattr(self.slider.valueChanged, layer, 'contrast_limits')
         connect_setattr(
-            self.slider.rangeChanged, layer, "contrast_limits_range"
+            self.slider.rangeChanged, layer, 'contrast_limits_range'
         )
 
         def reset():
             layer.reset_contrast_limits()
             layer.contrast_limits_range = layer.contrast_limits
+            decimals_ = range_to_decimals(
+                layer.contrast_limits_range, layer.dtype
+            )
+            self.slider.setDecimals(decimals_)
+            self.slider.setSingleStep(10**-decimals_)
 
-        reset_btn = QPushButton("reset")
-        reset_btn.setObjectName("reset_clims_button")
-        reset_btn.setToolTip(trans._("autoscale contrast to data range"))
+        reset_btn = QPushButton('reset')
+        reset_btn.setObjectName('reset_clims_button')
+        reset_btn.setToolTip(trans._('autoscale contrast to data range'))
         reset_btn.setFixedWidth(45)
         reset_btn.clicked.connect(reset)
         self._layout.addWidget(
@@ -268,10 +397,10 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         # unsigned integer type (it's unclear what range should be set)
         # so we don't show create it at all.
         if np.issubdtype(normalize_dtype(layer.dtype), np.integer):
-            range_btn = QPushButton("full range")
-            range_btn.setObjectName("full_clim_range_button")
+            range_btn = QPushButton('full range')
+            range_btn.setObjectName('full_clim_range_button')
             range_btn.setToolTip(
-                trans._("set contrast range to full bit-depth")
+                trans._('set contrast range to full bit-depth')
             )
             range_btn.setFixedWidth(75)
             range_btn.clicked.connect(layer.reset_contrast_limits_range)
@@ -296,10 +425,7 @@ def range_to_decimals(range_, dtype):
     int
         Decimals of precision.
     """
-
-    if hasattr(dtype, 'numpy_dtype'):
-        # retrieve the corresponding numpy.dtype from a tensorstore.dtype
-        dtype = dtype.numpy_dtype
+    dtype = normalize_dtype(dtype)
 
     if np.issubdtype(dtype, np.integer):
         return 0

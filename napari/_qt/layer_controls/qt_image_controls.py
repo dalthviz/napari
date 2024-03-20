@@ -160,7 +160,7 @@ class QtImageControls(QtBaseImageControls):
 
         colormap_layout = QHBoxLayout()
         if hasattr(self.layer, 'rgb') and self.layer.rgb:
-            colormap_layout.addWidget(QLabel("RGB"))
+            colormap_layout.addWidget(QLabel('RGB'))
             self.colormapComboBox.setVisible(False)
             self.colorbarLabel.setVisible(False)
         else:
@@ -168,6 +168,7 @@ class QtImageControls(QtBaseImageControls):
             colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
+        self.layout().addRow(self.button_grid)
         self.layout().addRow(self.scaleLabel, self.scaleControl)
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(
