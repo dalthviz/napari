@@ -173,11 +173,15 @@ class QtShapesControls(QtLayerControls):
 
         self.panzoom_button = _radio_button(
             layer,
-            'pan',
+            'pan_zoom',
             Mode.PAN_ZOOM,
             'activate_shapes_pan_zoom_mode',
             extra_tooltip_text=trans._('(or hold Space)'),
             checked=True,
+        )
+
+        self.transform_button = _radio_button(
+            layer, 'pan', Mode.TRANSFORM, 'activate_shapes_transform_mode'
         )
 
         self.rectangle_button = _radio_button(
@@ -260,6 +264,7 @@ class QtShapesControls(QtLayerControls):
             self.direct_button,
             self.rectangle_button,
             self.ellipse_button,
+            self.transform_button,
             self.line_button,
             self.path_button,
             self.polygon_button,
@@ -275,6 +280,7 @@ class QtShapesControls(QtLayerControls):
         self.button_group.addButton(self.select_button)
         self.button_group.addButton(self.direct_button)
         self.button_group.addButton(self.panzoom_button)
+        self.button_group.addButton(self.transform_button)
         self.button_group.addButton(self.rectangle_button)
         self.button_group.addButton(self.ellipse_button)
         self.button_group.addButton(self.line_button)
@@ -286,12 +292,13 @@ class QtShapesControls(QtLayerControls):
         self._on_editable_or_visible_change()
 
         button_grid = QGridLayout()
-        button_grid.addWidget(self.vertex_remove_button, 0, 2)
-        button_grid.addWidget(self.vertex_insert_button, 0, 3)
-        button_grid.addWidget(self.delete_button, 0, 4)
-        button_grid.addWidget(self.direct_button, 0, 5)
-        button_grid.addWidget(self.select_button, 0, 6)
-        button_grid.addWidget(self.panzoom_button, 0, 7)
+        button_grid.addWidget(self.vertex_remove_button, 0, 1)
+        button_grid.addWidget(self.vertex_insert_button, 0, 2)
+        button_grid.addWidget(self.delete_button, 0, 3)
+        button_grid.addWidget(self.direct_button, 0, 4)
+        button_grid.addWidget(self.select_button, 0, 5)
+        button_grid.addWidget(self.panzoom_button, 0, 6)
+        button_grid.addWidget(self.transform_button, 0, 7)
         button_grid.addWidget(self.move_back_button, 1, 0)
         button_grid.addWidget(self.move_front_button, 1, 1)
         button_grid.addWidget(self.ellipse_button, 1, 2)
@@ -369,6 +376,7 @@ class QtShapesControls(QtLayerControls):
             Mode.ADD_POLYGON_LASSO: self.polygon_lasso_button,
             Mode.VERTEX_INSERT: self.vertex_insert_button,
             Mode.VERTEX_REMOVE: self.vertex_remove_button,
+            Mode.TRANSFORM: self.transform_button,
         }
 
         if event.mode in mode_buttons:

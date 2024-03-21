@@ -25,14 +25,14 @@ class QtScaleControl(QWidget):
     def __init__(self, layer, parent=None):
         super().__init__(parent)
         self.layer = layer
-        self.layer.events.scale.connect(self._on_scale_change)
+        self.layer.events.affine.connect(self._on_scale_change)
 
-        self.setProperty("emphasized", True)
+        self.setProperty('emphasized', True)
         self._sliders = []
 
         scaleLayout = QFormLayout()
         scaleLayout.setContentsMargins(0, 0, 0, 0)
-        for idx, scale in enumerate(self.layer.scale):
+        for idx, scale in enumerate(self.layer.affine.scale):
             scale_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
             scale_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             scale_slider.setMinimum(0.1)
@@ -49,12 +49,14 @@ class QtScaleControl(QWidget):
             new_scale = []
             for scale in self._sliders:
                 new_scale.append(scale.value())
-            self.layer.scale = new_scale
+            affine = self.layer.affine
+            affine.scale = new_scale
+            self.layer.affine = affine
 
     def _on_scale_change(self):
-        with self.layer.events.scale.blocker():
+        with self.layer.events.affine.blocker():
             for idx, slider in enumerate(self._sliders):
-                slider.setValue(self.layer.scale[idx])
+                slider.setValue(self.layer.affine.scale[idx])
 
     def show_popup(self):
         scale_popup = QtScalePopup(self.layer, parent=self)
@@ -88,7 +90,7 @@ class QtScalePopup(QtPopup):
         scaleLayout = QFormLayout()
         scaleLayout.setContentsMargins(0, 0, 0, 0)
 
-        for idx, scale in enumerate(self.layer.scale):
+        for idx, scale in enumerate(self.layer.affine.scale):
             scale_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
             scale_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             scale_slider.setMinimum(0.1)
@@ -100,8 +102,8 @@ class QtScalePopup(QtPopup):
             scaleLayout.addRow(str(idx), scale_slider)
         layout.addLayout(scaleLayout)
 
-        reset_btn = QPushButton("reset")
-        reset_btn.setToolTip(trans._("Reset scale"))
+        reset_btn = QPushButton('reset')
+        reset_btn.setToolTip(trans._('Reset scale'))
         reset_btn.setFixedWidth(45)
         reset_btn.clicked.connect(self.reset)
         layout.addWidget(reset_btn)
@@ -112,7 +114,9 @@ class QtScalePopup(QtPopup):
         new_scale = []
         for scale in self._sliders:
             new_scale.append(scale.value())
-        self.layer.scale = new_scale
+            affine = self.layer.affine
+            affine.scale = new_scale
+            self.layer.affine = affine
 
     def reset(self):
         for scale in self._sliders:
