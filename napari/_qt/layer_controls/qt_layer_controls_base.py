@@ -1,11 +1,13 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
     QFormLayout,
     QFrame,
-    QHBoxLayout,
     QLabel,
     QPushButton,
+    QVBoxLayout,
     QWidget,
 )
 from superqt import QLabeledDoubleSlider
@@ -80,47 +82,160 @@ class QtScaleControl(QWidget):
             super().mousePressEvent(event)
 
 
+class QtScaleDialog(QDialog):
+    def __init__(self, layer: Layer, initial_affine, parent=None) -> None:
+        super().__init__(parent=parent)
+        self.setWindowFlags(
+            self.windowFlags() & ~Qt.WindowContextHelpButtonHint
+        )
+        self.layer = layer
+        self._initial_affine = initial_affine
+        # self._sliders = []
+        layout = QVBoxLayout()
+        # scaleLayout = QFormLayout()
+        # scaleLayout.setContentsMargins(0, 0, 0, 0)
+
+        # for idx, scale in enumerate(self.layer.affine.scale):
+        #     scale_slider = QLabel(str(scale))
+        #     # scale_slider.setValue(scale)
+        #     # scale_slider.valueChanged.connect(self.changeScale)
+        #     self._sliders.append(scale_slider)
+        #     scaleLayout.addRow(str(idx), scale_slider)
+        # layout.addLayout(scaleLayout)
+        button_box = QDialogButtonBox(Qt.Vertical, parent=self)
+        reset_scale_btn = QPushButton('reset scale')
+        reset_scale_btn.setToolTip(trans._('Reset affine transform scale'))
+        reset_scale_btn.clicked.connect(self.reset_scale)
+        # layout.addWidget(reset_scale_btn)
+        button_box.addButton(
+            reset_scale_btn, QDialogButtonBox.ButtonRole.ActionRole
+        )
+
+        reset_rotate_btn = QPushButton('reset rotate')
+        reset_rotate_btn.setToolTip(trans._('Reset affine transform rotate'))
+        reset_rotate_btn.clicked.connect(self.reset_rotate)
+        # layout.addWidget(reset_rotate_btn)
+        button_box.addButton(
+            reset_rotate_btn, QDialogButtonBox.ButtonRole.ActionRole
+        )
+
+        reset_translate_btn = QPushButton('reset translate')
+        reset_translate_btn.setToolTip(
+            trans._('Reset affine transform translate')
+        )
+        reset_translate_btn.clicked.connect(self.reset_translate)
+        # layout.addWidget(reset_translate_btn)
+        button_box.addButton(
+            reset_translate_btn, QDialogButtonBox.ButtonRole.ActionRole
+        )
+
+        reset_btn = QPushButton('reset all')
+        reset_btn.setToolTip(trans._('Reset affine transform'))
+        # reset_btn.setFixedWidth(45)
+        reset_btn.clicked.connect(self.reset)
+        button_box.addButton(reset_btn, QDialogButtonBox.ButtonRole.ResetRole)
+        # layout.addWidget(reset_btn)
+        layout.addWidget(button_box)
+        self.setLayout(layout)
+
+        # self.frame.setLayout(layout)
+
+    # def changeScale(self, value):
+    #     new_scale = []
+    #     for scale in self._sliders:
+    #         new_scale.append(scale.value())
+    #         affine = self.layer.affine
+    #         affine.scale = new_scale
+    #         self.layer.affine = affine
+
+    def reset_scale(self):
+        new_affine = self.layer.affine
+        new_affine.scale = self._initial_affine.scale
+        self.layer.affine = new_affine
+
+    def reset_rotate(self):
+        new_affine = self.layer.affine
+        new_affine.rotate = self._initial_affine.rotate
+        self.layer.affine = new_affine
+
+    def reset_translate(self):
+        new_affine = self.layer.affine
+        new_affine.translate = self._initial_affine.translate
+        self.layer.affine = new_affine
+
+    def reset(self):
+        self.layer.affine = self._initial_affine
+
+
 class QtScalePopup(QtPopup):
-    def __init__(self, layer: Layer, parent=None) -> None:
+    def __init__(self, layer: Layer, initial_affine, parent=None) -> None:
         super().__init__(parent)
 
         self.layer = layer
-        self._sliders = []
-        layout = QHBoxLayout()
-        scaleLayout = QFormLayout()
-        scaleLayout.setContentsMargins(0, 0, 0, 0)
+        self._initial_affine = initial_affine
+        # self._sliders = []
+        layout = QVBoxLayout()
+        # scaleLayout = QFormLayout()
+        # scaleLayout.setContentsMargins(0, 0, 0, 0)
 
-        for idx, scale in enumerate(self.layer.affine.scale):
-            scale_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
-            scale_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            scale_slider.setMinimum(0.1)
-            scale_slider.setMaximum(10)
-            scale_slider.setSingleStep(0.01)
-            scale_slider.setValue(scale)
-            scale_slider.valueChanged.connect(self.changeScale)
-            self._sliders.append(scale_slider)
-            scaleLayout.addRow(str(idx), scale_slider)
-        layout.addLayout(scaleLayout)
+        # for idx, scale in enumerate(self.layer.affine.scale):
+        #     scale_slider = QLabel(str(scale))
+        #     # scale_slider.setValue(scale)
+        #     # scale_slider.valueChanged.connect(self.changeScale)
+        #     self._sliders.append(scale_slider)
+        #     scaleLayout.addRow(str(idx), scale_slider)
+        # layout.addLayout(scaleLayout)
 
-        reset_btn = QPushButton('reset')
-        reset_btn.setToolTip(trans._('Reset scale'))
-        reset_btn.setFixedWidth(45)
+        reset_scale_btn = QPushButton('reset scale')
+        reset_scale_btn.setToolTip(trans._('Reset affine transform scale'))
+        reset_scale_btn.clicked.connect(self.reset_scale)
+        layout.addWidget(reset_scale_btn)
+
+        reset_rotate_btn = QPushButton('reset rotate')
+        reset_rotate_btn.setToolTip(trans._('Reset affine transform rotate'))
+        reset_rotate_btn.clicked.connect(self.reset_rotate)
+        layout.addWidget(reset_rotate_btn)
+
+        reset_translate_btn = QPushButton('reset translate')
+        reset_translate_btn.setToolTip(
+            trans._('Reset affine transform translate')
+        )
+        reset_translate_btn.clicked.connect(self.reset_translate)
+        layout.addWidget(reset_translate_btn)
+
+        reset_btn = QPushButton('reset all')
+        reset_btn.setToolTip(trans._('Reset affine transform'))
+        # reset_btn.setFixedWidth(45)
         reset_btn.clicked.connect(self.reset)
         layout.addWidget(reset_btn)
 
         self.frame.setLayout(layout)
 
-    def changeScale(self, value):
-        new_scale = []
-        for scale in self._sliders:
-            new_scale.append(scale.value())
-            affine = self.layer.affine
-            affine.scale = new_scale
-            self.layer.affine = affine
+    # def changeScale(self, value):
+    #     new_scale = []
+    #     for scale in self._sliders:
+    #         new_scale.append(scale.value())
+    #         affine = self.layer.affine
+    #         affine.scale = new_scale
+    #         self.layer.affine = affine
+
+    def reset_scale(self):
+        new_affine = self.layer.affine
+        new_affine.scale = self._initial_affine.scale
+        self.layer.affine = new_affine
+
+    def reset_rotate(self):
+        new_affine = self.layer.affine
+        new_affine.rotate = self._initial_affine.rotate
+        self.layer.affine = new_affine
+
+    def reset_translate(self):
+        new_affine = self.layer.affine
+        new_affine.translate = self._initial_affine.translate
+        self.layer.affine = new_affine
 
     def reset(self):
-        for scale in self._sliders:
-            scale.setValue(1.0)
+        self.layer.affine = self._initial_affine
 
 
 class LayerFormLayout(QFormLayout):
@@ -199,7 +314,7 @@ class QtLayerControls(QFrame):
 
         # scale widget
         self.scaleLabel = QLabel(trans._('scale:'))
-        self.scaleControl = QtScaleControl(layer, self)
+        # self.scaleControl = QtScaleControl(layer, self)
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.

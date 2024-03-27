@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QImage, QPixmap
+from qtpy.QtGui import QImage, QMouseEvent, QPixmap
 from qtpy.QtWidgets import (
     QButtonGroup,
     QGridLayout,
@@ -16,7 +16,10 @@ from qtpy.QtWidgets import (
 from superqt import QDoubleRangeSlider
 
 from napari._qt.layer_controls.qt_colormap_combobox import QtColormapComboBox
-from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
+from napari._qt.layer_controls.qt_layer_controls_base import (
+    QtLayerControls,
+    QtScalePopup,
+)
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
@@ -77,6 +80,8 @@ class QtBaseImageControls(QtLayerControls):
 
     def __init__(self, layer: Image) -> None:
         super().__init__(layer)
+
+        self.initial_affine = layer.affine
 
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -152,6 +157,13 @@ class QtBaseImageControls(QtLayerControls):
         self.transform_button = _radio_button(
             layer, 'pan', Mode.TRANSFORM, 'activate_image_transform_mode'
         )
+        self.transform_button.installEventFilter(self)
+        self.transform_button.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu
+        )
+        self.transform_button.customContextMenuRequested.connect(
+            self._open_reset_dialog
+        )
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)
@@ -218,6 +230,38 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel.setToolTip(trans._('Colorbar'))
 
         self._on_colormap_change()
+
+    def eventFilter(self, qobject, event):
+        if (
+            qobject == self.transform_button
+            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.AltModifier
+        ):
+            self._open_reset_popup()
+            return True
+        return super().eventFilter(qobject, event)
+
+    def _open_reset_popup(self):
+        scale_popup = QtScalePopup(
+            self.layer, self.initial_affine, parent=self
+        )
+        # scale_popup.move_to('top')
+        scale_popup.show_right_of_mouse()
+
+    def _open_reset_dialog(self):
+        # scale_dialog = QtScaleDialog(self.layer, self.initial_affine, parent=self)
+        # scale_dialog.open()
+        from qtpy.QtWidgets import QMessageBox
+
+        result = QMessageBox.warning(
+            self,
+            'Reset transform',
+            'Are you sure you want to reset transforms?',
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if result == QMessageBox.Yes:
+            self.layer.affine = self.initial_affine
 
     def changeColor(self, text):
         """Change colormap on the layer model.
