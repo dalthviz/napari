@@ -89,12 +89,13 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_add_layer(make_napari_viewer, layer_class, data, ndim):
+def test_add_layer(make_napari_viewer, qtbot, layer_class, data, ndim):
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window._qt_viewer
 
     add_layer_by_type(viewer, layer_class, data)
     check_viewer_functioning(viewer, view, data, ndim)
+    qtbot.wait(1000)
 
 
 def test_new_labels(make_napari_viewer):
@@ -584,7 +585,7 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     )
 
 
-def test_remove_add_image_3D(make_napari_viewer):
+def test_remove_add_image_3D(make_napari_viewer, qtbot):
     """
     Test that adding, removing and readding an image layer in 3D does not cause issues
     due to the vispy node change. See https://github.com/napari/napari/pull/3670
@@ -593,8 +594,11 @@ def test_remove_add_image_3D(make_napari_viewer):
     img = np.ones((10, 10, 10))
 
     layer = viewer.add_image(img)
+    qtbot.wait(1000)
     viewer.layers.remove(layer)
-    viewer.layers.append(layer)
+    qtbot.wait(1000)
+    viewer.add_layer(layer)
+    qtbot.wait(1000)
 
 
 @skip_on_win_ci
@@ -746,6 +750,7 @@ def test_label_colors_matching_widget_auto(
             color_box_color, middle_pixel, atol=1, err_msg=f'label {label}'
         )
         # there is a difference of rounding between the QtColorBox and the screenshot
+    qtbot.wait(1000)
 
 
 @skip_local_popups
@@ -798,6 +803,7 @@ def test_label_colors_matching_widget_direct(
             colormap.color_dict.get(label, colormap.color_dict[None]) * 255,
             err_msg=f'{label=}',
         )
+    qtbot.wait(1000)
 
 
 def test_axes_labels(make_napari_viewer):

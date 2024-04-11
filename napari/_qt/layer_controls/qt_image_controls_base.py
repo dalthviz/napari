@@ -15,7 +15,6 @@ from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari._qt.widgets.qt_range_slider_popup import QRangeSliderPopup
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
-from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -107,16 +106,16 @@ class QtBaseImageControls(QtLayerControls):
 
         self.clim_popup = None
 
-        connect_setattr(
-            self.contrastLimitsSlider.valueChanged,
-            self.layer,
-            'contrast_limits',
-        )
-        connect_setattr(
-            self.contrastLimitsSlider.rangeChanged,
-            self.layer,
-            'contrast_limits_range',
-        )
+        # connect_setattr(
+        #    self.contrastLimitsSlider.valueChanged,
+        #    self.layer,
+        #    'contrast_limits',
+        # )
+        # connect_setattr(
+        #    self.contrastLimitsSlider.rangeChanged,
+        #    self.layer,
+        #    'contrast_limits_range',
+        # )
         self.autoScaleBar = AutoScaleButtons(layer, self)
 
         # gamma slider
@@ -125,7 +124,7 @@ class QtBaseImageControls(QtLayerControls):
         sld.setMaximum(2)
         sld.setSingleStep(0.02)
         sld.setValue(self.layer.gamma)
-        connect_setattr(sld.valueChanged, self.layer, 'gamma')
+        # connect_setattr(sld.valueChanged, self.layer, 'gamma')
         self.gammaSlider = sld
 
         self.colorbarLabel = QLabel(parent=self)
@@ -199,6 +198,8 @@ class QtBaseImageControls(QtLayerControls):
             self.gammaSlider.setValue(self.layer.gamma)
 
     def closeEvent(self, event):
+        self.autoScaleBar = None
+        self.gammaSlider = None
         self.deleteLater()
         self.layer.events.disconnect(self)
         super().closeEvent(event)
@@ -223,10 +224,10 @@ class AutoScaleButtons(QWidget):
         auto_btn = QPushButton(trans._('continuous'))
         auto_btn.setCheckable(True)
         auto_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
-        connect_no_arg(once_btn.clicked, layer, 'reset_contrast_limits')
-        connect_setattr(auto_btn.toggled, layer, '_keep_auto_contrast')
-        connect_no_arg(auto_btn.clicked, layer, 'reset_contrast_limits')
+        # once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
+        # connect_no_arg(once_btn.clicked, layer, 'reset_contrast_limits')
+        # connect_setattr(auto_btn.toggled, layer, '_keep_auto_contrast')
+        # connect_no_arg(auto_btn.clicked, layer, 'reset_contrast_limits')
 
         self.layout().addWidget(once_btn)
         self.layout().addWidget(auto_btn)
@@ -246,10 +247,10 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         self.slider.setSingleStep(10**-decimals)
         self.slider.setValue(layer.contrast_limits)
 
-        connect_setattr(self.slider.valueChanged, layer, 'contrast_limits')
-        connect_setattr(
-            self.slider.rangeChanged, layer, 'contrast_limits_range'
-        )
+        # connect_setattr(self.slider.valueChanged, layer, 'contrast_limits')
+        # connect_setattr(
+        #    self.slider.rangeChanged, layer, 'contrast_limits_range'
+        # )
 
         def reset():
             layer.reset_contrast_limits()

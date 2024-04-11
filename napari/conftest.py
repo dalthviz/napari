@@ -72,6 +72,45 @@ if os.getenv('CI') and sys.platform.startswith('linux'):
         xauth.touch()
 
 
+def patched_disconnect(self, slot=None):
+    if hasattr(slot, 'im_func') and hasattr(slot.im_func, '__compiled__'):
+        patched_disconnect._protected = getattr(
+            patched_disconnect, '_protected', []
+        )
+        patched_disconnect._protected.append(slot)
+
+    return orig_disconnect(self, slot)
+
+
+def patched_connect(self, slot, type=None):  # noqa: A002
+    connection_type = type or QtCore.Qt.ConnectionType.AutoConnection
+    if hasattr(slot, 'im_func') and hasattr(slot.im_func, '__compiled__'):
+        patched_connect._protected = getattr(patched_connect, '_protected', [])
+        patched_connect._protected.append(slot)
+
+        if not slot.im_func.__name__.startswith('_pyside6_workaround_'):
+            slot.im_func.__name__ = (
+                '_pyside6_workaround_' + slot.im_func.__name__
+            )
+
+            with suppress(Exception):
+                setattr(
+                    slot.im_self.__class__,
+                    slot.im_func.__name__,
+                    slot.im_func,
+                )
+
+    return orig_connect(self, slot, connection_type)
+
+
+from PySide6 import QtCore  # noqa: E402
+
+orig_disconnect = QtCore.SignalInstance.disconnect
+QtCore.SignalInstance.disconnect = patched_disconnect
+orig_connect = QtCore.SignalInstance.connect
+QtCore.SignalInstance.connect = patched_connect
+
+
 @pytest.fixture
 def layer_data_and_types():
     """Fixture that provides some layers and filenames

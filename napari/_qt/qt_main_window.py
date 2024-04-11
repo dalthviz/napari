@@ -209,6 +209,27 @@ class _QtMainWindow(QMainWindow):
 
     def event(self, e: QEvent) -> bool:
         if (
+            QApplication.activePopupWidget() is None
+            and hasattr(self, '_toggle_menubar_visibility')
+            and self._toggle_menubar_visibility
+        ):
+            if e.type() == QEvent.Type.MouseMove:
+                if self.menuBar().isHidden():
+                    rect = self.geometry()
+                    # set mouse-sensitive zone to trigger showing the menubar
+                    rect.setHeight(25)
+                    if rect.contains(e.globalPos()):
+                        self.menuBar().show()
+                else:
+                    rect = QRect(
+                        self.menuBar().mapToGlobal(QPoint(0, 0)),
+                        self.menuBar().size(),
+                    )
+                    if not rect.contains(e.globalPos()):
+                        self.menuBar().hide()
+            elif e.type() == QEvent.Type.Leave:
+                self.menuBar().hide()
+        if (
             e.type() == QEvent.Type.ToolTip
             and self._qt_viewer.viewer.tooltip.visible
         ):
@@ -291,32 +312,6 @@ class _QtMainWindow(QMainWindow):
             )
         else:
             super().showFullScreen()
-
-    def eventFilter(self, source, event):
-        # Handle showing hidden menubar on mouse move event.
-        # We do not hide menubar when a menu is being shown or
-        # we are not in menubar toggled state
-        if (
-            QApplication.activePopupWidget() is None
-            and self._toggle_menubar_visibility
-        ):
-            if event.type() == QEvent.Type.MouseMove:
-                if self.menuBar().isHidden():
-                    rect = self.geometry()
-                    # set mouse-sensitive zone to trigger showing the menubar
-                    rect.setHeight(25)
-                    if rect.contains(event.globalPos()):
-                        self.menuBar().show()
-                else:
-                    rect = QRect(
-                        self.menuBar().mapToGlobal(QPoint(0, 0)),
-                        self.menuBar().size(),
-                    )
-                    if not rect.contains(event.globalPos()):
-                        self.menuBar().hide()
-            elif event.type() == QEvent.Type.Leave and source is self:
-                self.menuBar().hide()
-        return QMainWindow.eventFilter(self, source, event)
 
     def _load_window_settings(self):
         """
@@ -634,7 +629,7 @@ class Window:
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
-        qapp = get_app()
+        qapp = get_app()  # noqa: F841
 
         # Dictionary holding dock widgets
         self._dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
@@ -646,7 +641,6 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
-        qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
@@ -671,11 +665,11 @@ class Window:
         self._add_viewer_dock_widget(
             self._qt_viewer.dockConsole, tabify=False, menu=self.window_menu
         )
-        self._add_viewer_dock_widget(
-            self._qt_viewer.dockLayerControls,
-            tabify=False,
-            menu=self.window_menu,
-        )
+        # self._add_viewer_dock_widget(
+        #    self._qt_viewer.dockLayerControls,
+        #    tabify=False,
+        #    menu=self.window_menu,
+        # )
         self._add_viewer_dock_widget(
             self._qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
         )
@@ -692,14 +686,14 @@ class Window:
         if show:
             self.show()
             # Ensure the controls dock uses the minimum height
-            self._qt_window.resizeDocks(
-                [
-                    self._qt_viewer.dockLayerControls,
-                    self._qt_viewer.dockLayerList,
-                ],
-                [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
-                Qt.Orientation.Vertical,
-            )
+            # self._qt_window.resizeDocks(
+            #    [
+            #        self._qt_viewer.dockLayerControls,
+            #        self._qt_viewer.dockLayerList,
+            #    ],
+            #    [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
+            #    Qt.Orientation.Vertical,
+            # )
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
@@ -1605,6 +1599,13 @@ class Window:
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.removed.disconnect(self._remove_theme)
+        self._main_menu_shortcut = None
+        self.file_menu = None
+        self.view_menu = None
+        self.plugins_menu = None
+        self.window_menu = None
+        self.help_menu = None
+        self.main_menu = None
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""

@@ -152,7 +152,7 @@ class QtDimSliderWidget(QWidget):
         # Set the maximum values of the range slider to be one step less than
         # the range of the layer as otherwise the slider can move beyond the
         # shape of the layer as the endpoint is included
-        slider = ModifiedScrollBar(Qt.Orientation.Horizontal)
+        slider = ModifiedScrollBar(Qt.Orientation.Horizontal, parent=self)
         slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         slider.setMinimum(0)
         slider.setMaximum(self.dims.nsteps[self.axis] - 1)

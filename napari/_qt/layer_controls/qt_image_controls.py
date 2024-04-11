@@ -367,6 +367,11 @@ class QtImageControls(QtBaseImageControls):
             self.depictionComboBox.show()
             self.depictionLabel.show()
 
+    def closeEvent(self, event):
+        self.layer.plane.events.disconnect(self)
+        self.planeThicknessSlider = None
+        super().closeEvent(event)
+
 
 class PlaneNormalButtons(QWidget):
     """Qt buttons for controlling plane orientation.
