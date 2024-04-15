@@ -131,17 +131,17 @@ def test_keybinding_with_modifiers(
     x = widget._table.columnViewportPosition(widget._shortcut_col)
     y = widget._table.rowViewportPosition(0)
     item_pos = QPoint(x, y)
-    qtbot.mouseClick(
-        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
-    )
     with qtbot.waitSignal(QApplication.instance().focusChanged) as focus:
+        qtbot.mouseClick(
+            widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+        )
         qtbot.mouseDClick(
             widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
         )
     focus_lineedit = focus.args[1]  # Get widget that got focused now
     assert focus_lineedit
     assert isinstance(focus_lineedit, QLineEdit)
-    qtbot.keyClick(QApplication.focusWidget(), key, modifier=modifier)
+    qtbot.keyClick(focus_lineedit, key, modifier=modifier)
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
