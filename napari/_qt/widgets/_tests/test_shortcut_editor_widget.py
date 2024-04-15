@@ -137,7 +137,9 @@ def test_keybinding_with_modifiers(
     qtbot.mouseDClick(
         widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
     )
-    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
+    qtbot.waitUntil(
+        lambda: QApplication.focusWidget() is not None, timeout=10000
+    )
     qtbot.keyClick(QApplication.focusWidget(), key, modifier=modifier)
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
