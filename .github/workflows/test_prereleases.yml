@@ -23,7 +23,6 @@ jobs:
     permissions:
       contents: read
       issues: write
-    if: github.repository == 'napari/napari'
     strategy:
       fail-fast: false
       matrix:
