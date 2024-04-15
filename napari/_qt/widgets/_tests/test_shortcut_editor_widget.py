@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pyautogui
 import pytest
 from qtpy.QtCore import QPoint, Qt
-from qtpy.QtWidgets import QApplication, QMessageBox
+from qtpy.QtWidgets import QApplication, QLineEdit, QMessageBox
 
 from napari._qt.widgets.qt_keyboard_settings import ShortcutEditor, WarnPopup
 from napari._tests.utils import skip_local_focus, skip_on_mac_ci
@@ -134,12 +134,13 @@ def test_keybinding_with_modifiers(
     qtbot.mouseClick(
         widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
     )
-    qtbot.mouseDClick(
-        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
-    )
-    qtbot.waitUntil(
-        lambda: QApplication.focusWidget() is not None, timeout=10000
-    )
+    with qtbot.waitSignal(QApplication.instance().focusChanged) as focus:
+        qtbot.mouseDClick(
+            widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+        )
+    focus_lineedit = focus.args[1]  # Get widget that got focused now
+    assert focus_lineedit
+    assert isinstance(focus_lineedit, QLineEdit)
     qtbot.keyClick(QApplication.focusWidget(), key, modifier=modifier)
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
