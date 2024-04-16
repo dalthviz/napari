@@ -4,9 +4,13 @@ from unittest.mock import patch
 import pyautogui
 import pytest
 from qtpy.QtCore import QPoint, Qt
-from qtpy.QtWidgets import QApplication, QLineEdit, QMessageBox
+from qtpy.QtWidgets import QApplication, QMessageBox
 
-from napari._qt.widgets.qt_keyboard_settings import ShortcutEditor, WarnPopup
+from napari._qt.widgets.qt_keyboard_settings import (
+    EditorWidget,
+    ShortcutEditor,
+    WarnPopup,
+)
 from napari._tests.utils import skip_local_focus, skip_on_mac_ci
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
@@ -131,17 +135,20 @@ def test_keybinding_with_modifiers(
     x = widget._table.columnViewportPosition(widget._shortcut_col)
     y = widget._table.rowViewportPosition(0)
     item_pos = QPoint(x, y)
-    with qtbot.waitSignal(QApplication.instance().focusChanged) as focus:
-        qtbot.mouseClick(
-            widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
-        )
+
+    qtbot.mouseClick(
+        widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
+    )
+    with qtbot.waitSignal(
+        QApplication.instance().focusChanged
+    ) as focus_editor:
         qtbot.mouseDClick(
             widget._table.viewport(), Qt.MouseButton.LeftButton, pos=item_pos
         )
-    focus_lineedit = focus.args[1]  # Get widget that got focused now
-    assert focus_lineedit
-    assert isinstance(focus_lineedit, QLineEdit)
-    qtbot.keyClick(focus_lineedit, key, modifier=modifier)
+    focused_editor = focus_editor.args[1]  # Get editor widget that got focused
+    assert isinstance(focused_editor, EditorWidget)
+
+    qtbot.keyClick(focused_editor, key, modifier=modifier)
     assert len([warn for warn in recwarn if warn.category is UserWarning]) == 0
 
     shortcut = widget._table.item(0, widget._shortcut_col).text()
