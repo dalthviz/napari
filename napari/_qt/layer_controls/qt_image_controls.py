@@ -22,6 +22,7 @@ from napari.layers.image._image_constants import (
     VolumeDepiction,
 )
 from napari.utils.action_manager import action_manager
+from napari.utils.events.event_utils import disconnect_events
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -368,9 +369,10 @@ class QtImageControls(QtBaseImageControls):
             self.depictionLabel.show()
 
     def closeEvent(self, event):
-        self.layer.plane.events.disconnect(self)
+        disconnect_events(self.layer.plane.events, self)
+        self.planeThicknessSlider.close()
         self.planeThicknessSlider = None
-        super().closeEvent(event)
+        return super().closeEvent(event)
 
 
 class PlaneNormalButtons(QWidget):

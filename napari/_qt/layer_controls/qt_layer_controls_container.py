@@ -16,6 +16,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.utils.events.event_utils import disconnect_events
 from napari.utils.translations import trans
 
 layer_to_controls = {
@@ -90,6 +91,7 @@ class QtLayerControlsContainer(QStackedWidget):
         super().__init__()
         self.setProperty('emphasized', True)
         self.viewer = viewer
+        self._ndisplay = viewer.dims.ndisplay
 
         self.setMouseTracking(True)
         self.empty_widget = QFrame()
@@ -100,8 +102,8 @@ class QtLayerControlsContainer(QStackedWidget):
 
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
-        viewer.layers.selection.events.active.connect(self._display)
-        viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
+        self.viewer.layers.selection.events.active.connect(self._display)
+        self.viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
 
     def _on_ndisplay_changed(self, event):
         """Responds to a change in the dimensionality displayed in the canvas.
@@ -111,9 +113,10 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the new dimensionality value at `event.value`.
         """
+        self._ndisplay = event.value
         for widget in self.widgets.values():
             if widget is not self.empty_widget:
-                widget.ndisplay = event.value
+                widget.ndisplay = self._ndisplay
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.
@@ -140,7 +143,7 @@ class QtLayerControlsContainer(QStackedWidget):
         """
         layer = event.value
         controls = create_qt_layer_controls(layer)
-        controls.ndisplay = self.viewer.dims.ndisplay
+        controls.ndisplay = self._ndisplay
         self.addWidget(controls)
         self.widgets[layer] = controls
 
@@ -153,9 +156,16 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         layer = event.value
-        controls = self.widgets[layer]
-        self.removeWidget(controls)
-        controls.hide()
-        controls.deleteLater()
-        controls = None
-        del self.widgets[layer]
+        if layer in self.widgets:
+            controls = self.widgets.pop(layer)
+            controls.close()
+            self.removeWidget(controls)
+            # controls.hide()
+            controls = None
+
+    def closeEvent(self, event):
+        disconnect_events(self.viewer.layers.events, self)
+        disconnect_events(self.viewer.dims.events, self)
+        self.viewer = None
+        self.widgets.clear()
+        return super().closeEvent(event)

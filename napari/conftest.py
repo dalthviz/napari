@@ -72,43 +72,58 @@ if os.getenv('CI') and sys.platform.startswith('linux'):
         xauth.touch()
 
 
-def patched_disconnect(self, slot=None):
-    if hasattr(slot, 'im_func') and hasattr(slot.im_func, '__compiled__'):
-        patched_disconnect._protected = getattr(
-            patched_disconnect, '_protected', []
-        )
-        patched_disconnect._protected.append(slot)
+@pytest.fixture
+def pyside6_signals_patch():
+    from packaging.version import parse
+    from qtpy import PYSIDE6, QT_VERSION
 
-    return orig_disconnect(self, slot)
+    if PYSIDE6 and parse(QT_VERSION) >= parse('6.4.3'):
+        from qtpy import QtCore
 
+        orig_disconnect = QtCore.SignalInstance.disconnect
 
-def patched_connect(self, slot, type=None):  # noqa: A002
-    connection_type = type or QtCore.Qt.ConnectionType.AutoConnection
-    if hasattr(slot, 'im_func') and hasattr(slot.im_func, '__compiled__'):
-        patched_connect._protected = getattr(patched_connect, '_protected', [])
-        patched_connect._protected.append(slot)
-
-        if not slot.im_func.__name__.startswith('_pyside6_workaround_'):
-            slot.im_func.__name__ = (
-                '_pyside6_workaround_' + slot.im_func.__name__
-            )
-
-            with suppress(Exception):
-                setattr(
-                    slot.im_self.__class__,
-                    slot.im_func.__name__,
-                    slot.im_func,
+        def patched_disconnect(self, slot=None):
+            if hasattr(slot, 'im_func') and hasattr(
+                slot.im_func, '__compiled__'
+            ):
+                patched_disconnect._protected = getattr(
+                    patched_disconnect, '_protected', []
                 )
+                patched_disconnect._protected.append(slot)
 
-    return orig_connect(self, slot, connection_type)
+            return orig_disconnect(self, slot)
 
+        QtCore.SignalInstance.disconnect = patched_disconnect
 
-from PySide6 import QtCore  # noqa: E402
+        orig_connect = QtCore.SignalInstance.connect
 
-orig_disconnect = QtCore.SignalInstance.disconnect
-QtCore.SignalInstance.disconnect = patched_disconnect
-orig_connect = QtCore.SignalInstance.connect
-QtCore.SignalInstance.connect = patched_connect
+        def patched_connect(self, slot, type=None):  # noqa: A002
+            connection_type = type or QtCore.Qt.ConnectionType.AutoConnection
+            if hasattr(slot, 'im_func') and hasattr(
+                slot.im_func, '__compiled__'
+            ):
+                patched_connect._protected = getattr(
+                    patched_connect, '_protected', []
+                )
+                patched_connect._protected.append(slot)
+
+                if not slot.im_func.__name__.startswith(
+                    '_pyside6_workaround_'
+                ):
+                    slot.im_func.__name__ = (
+                        '_pyside6_workaround_' + slot.im_func.__name__
+                    )
+
+                    with suppress(Exception):
+                        setattr(
+                            slot.im_self.__class__,
+                            slot.im_func.__name__,
+                            slot.im_func,
+                        )
+
+            return orig_connect(self, slot, connection_type)
+
+        QtCore.SignalInstance.connect = patched_connect
 
 
 @pytest.fixture
@@ -804,6 +819,7 @@ def pytest_runtest_setup(item):
                 'dangling_qanimations',
                 'dangling_qthreads',
                 'dangling_qtimers',
+                #'pyside6_signals_patch'
             ]
         )
 

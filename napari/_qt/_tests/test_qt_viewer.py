@@ -92,10 +92,19 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
 def test_add_layer(make_napari_viewer, qtbot, layer_class, data, ndim):
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window._qt_viewer
+    with qtbot.waitExposed(viewer.window._qt_window):
+        viewer.window._qt_window.show()
 
     add_layer_by_type(viewer, layer_class, data)
+    qtbot.wait(2000)
     check_viewer_functioning(viewer, view, data, ndim)
-    qtbot.wait(1000)
+    qtbot.wait(2000)
+    viewer.layers.remove_selected()
+    qtbot.wait(2000)
+    view = None
+    viewer = None
+    # viewer.close()
+    # qtbot.wait(2000)
 
 
 def test_new_labels(make_napari_viewer):
@@ -698,13 +707,13 @@ def _update_data(
 @pytest.fixture()
 def qt_viewer_with_controls(qtbot):
     qt_viewer = QtViewer(viewer=ViewerModel())
-    qt_viewer.show()
-    qt_viewer.controls.show()
+    with qtbot.waitExposed(qt_viewer):
+        qt_viewer.show()
+    with qtbot.waitExposed(qt_viewer.controls):
+        qt_viewer.controls.show()
+    qtbot.addWidget(qt_viewer)
+    qtbot.addWidget(qt_viewer.controls)
     yield qt_viewer
-    qt_viewer.controls.hide()
-    qt_viewer.controls.close()
-    qt_viewer.hide()
-    qt_viewer.close()
     qt_viewer._instances.clear()
     qtbot.wait(50)
 
@@ -750,7 +759,7 @@ def test_label_colors_matching_widget_auto(
             color_box_color, middle_pixel, atol=1, err_msg=f'label {label}'
         )
         # there is a difference of rounding between the QtColorBox and the screenshot
-    qtbot.wait(1000)
+    qtbot.wait(2000)
 
 
 @skip_local_popups
@@ -789,6 +798,7 @@ def test_label_colors_matching_widget_direct(
         layer, 0, qtbot, qt_viewer_with_controls, dtype
     )
     assert np.allclose([0, 0, 0, 255], middle_pixel)
+    qtbot.wait(2000)
 
     for label in test_colors:
         # Change color & selected color to the same label
@@ -803,7 +813,7 @@ def test_label_colors_matching_widget_direct(
             colormap.color_dict.get(label, colormap.color_dict[None]) * 255,
             err_msg=f'{label=}',
         )
-    qtbot.wait(1000)
+    qtbot.wait(2000)
 
 
 def test_axes_labels(make_napari_viewer):

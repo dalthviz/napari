@@ -9,6 +9,7 @@ from qtpy.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 from napari._qt.widgets.qt_dims_slider import QtDimSliderWidget
 from napari.components.dims import Dims
 from napari.settings._constants import LoopMode
+from napari.utils.events.event_utils import disconnect_events
 from napari.utils.translations import trans
 
 
@@ -232,8 +233,8 @@ class QtDims(QWidget):
         # As we delete this widget later, callbacks with a weak reference
         # to it may successfully grab the instance, but may be incompatible
         # with other update state like dims.
-        self.dims.events.axis_labels.disconnect(slider_widget._pull_label)
-        slider_widget.deleteLater()
+        disconnect_events(self.dims.events, slider_widget._pull_label)
+        slider_widget.close()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))
         self.dims.last_used = 0
@@ -363,6 +364,11 @@ class QtDims(QWidget):
             self.dims.set_current_step(axis, frame)
 
     def closeEvent(self, event):
-        [w.deleteLater() for w in self.slider_widgets]
-        self.deleteLater()
+        disconnect_events(self.dims.events, self)
+        self.stop()
+        [w.close() for w in self.slider_widgets]
+        self.slider_widgets.clear()
+        # self.deleteLater()
         event.accept()
+
+        return super().closeEvent(event)

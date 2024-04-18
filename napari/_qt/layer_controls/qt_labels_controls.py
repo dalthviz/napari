@@ -545,7 +545,16 @@ class QtLabelsControls(QtLayerControls):
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self.colorBox)
+        self.colorBox = None
         super().deleteLater()
+
+    def closeEvent(self, event):
+        disconnect_events(self.layer.events, self.colorBox)
+        self.colorBox.close()
+        self.colorBox = None
+        self.colorModeComboBox.close()
+        self.colorModeComboBox = None
+        return super().closeEvent(event)
 
 
 class QtColorBox(QWidget):
@@ -557,8 +566,8 @@ class QtColorBox(QWidget):
         An instance of a napari layer.
     """
 
-    def __init__(self, layer) -> None:
-        super().__init__()
+    def __init__(self, layer, parent=None) -> None:
+        super().__init__(parent=parent)
 
         self.layer = layer
         self.layer.events.selected_label.connect(
@@ -619,9 +628,11 @@ class QtColorBox(QWidget):
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self)
+        self.layer = None
         super().deleteLater()
 
     def closeEvent(self, event):
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
-        super().closeEvent(event)
+        self.layer = None
+        return super().closeEvent(event)

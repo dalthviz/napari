@@ -665,11 +665,11 @@ class Window:
         self._add_viewer_dock_widget(
             self._qt_viewer.dockConsole, tabify=False, menu=self.window_menu
         )
-        # self._add_viewer_dock_widget(
-        #    self._qt_viewer.dockLayerControls,
-        #    tabify=False,
-        #    menu=self.window_menu,
-        # )
+        self._add_viewer_dock_widget(
+            self._qt_viewer.dockLayerControls,
+            tabify=False,
+            menu=self.window_menu,
+        )
         self._add_viewer_dock_widget(
             self._qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
         )
@@ -686,14 +686,14 @@ class Window:
         if show:
             self.show()
             # Ensure the controls dock uses the minimum height
-            # self._qt_window.resizeDocks(
-            #    [
-            #        self._qt_viewer.dockLayerControls,
-            #        self._qt_viewer.dockLayerList,
-            #    ],
-            #    [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
-            #    Qt.Orientation.Vertical,
-            # )
+            self._qt_window.resizeDocks(
+                [
+                    self._qt_viewer.dockLayerControls,
+                    self._qt_viewer.dockLayerList,
+                ],
+                [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
+                Qt.Orientation.Vertical,
+            )
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
@@ -1615,7 +1615,7 @@ class Window:
             self._teardown()
             self._qt_viewer.close()
             self._qt_window.close()
-            del self._qt_window
+            self._qt_window = None
 
     def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""
