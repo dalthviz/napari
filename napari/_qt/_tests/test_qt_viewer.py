@@ -101,8 +101,6 @@ def test_add_layer(make_napari_viewer, qtbot, layer_class, data, ndim):
     qtbot.wait(2000)
     viewer.layers.remove_selected()
     qtbot.wait(2000)
-    view = None
-    viewer = None
     # viewer.close()
     # qtbot.wait(2000)
 

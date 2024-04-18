@@ -154,10 +154,10 @@ class QtLayerControls(QFrame):
     def deleteLater(self):
         disconnect_events(self.layer.events, self)
         self.layer = None
-        for child in self.children():
-            close_method = getattr(child, 'close', None)
-            if close_method is not None:
-                close_method()
+        # for child in self.children():
+        #     close_method = getattr(child, 'close', None)
+        #     if close_method is not None:
+        #         close_method()
         super().deleteLater()
 
     def closeEvent(self, event):

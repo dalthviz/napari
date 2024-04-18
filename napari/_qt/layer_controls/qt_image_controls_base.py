@@ -281,7 +281,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
                 trans._('set contrast range to full bit-depth')
             )
             range_btn.setFixedWidth(75)
-            range_btn.clicked.connect(layer.reset_contrast_limits_range)
+            # range_btn.clicked.connect(layer.reset_contrast_limits_range)
             self._layout.addWidget(
                 range_btn, alignment=Qt.AlignmentFlag.AlignBottom
             )

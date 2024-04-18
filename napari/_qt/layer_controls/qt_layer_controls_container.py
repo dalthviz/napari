@@ -102,7 +102,7 @@ class QtLayerControlsContainer(QStackedWidget):
 
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
-        self.viewer.layers.selection.events.active.connect(self._display)
+        # self.viewer.layers.selection.events.active.connect(self._display)
         self.viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
 
     def _on_ndisplay_changed(self, event):
@@ -144,8 +144,8 @@ class QtLayerControlsContainer(QStackedWidget):
         layer = event.value
         controls = create_qt_layer_controls(layer)
         controls.ndisplay = self._ndisplay
-        self.addWidget(controls)
         self.widgets[layer] = controls
+        self.addWidget(controls)
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
@@ -156,16 +156,27 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         layer = event.value
-        if layer in self.widgets:
-            controls = self.widgets.pop(layer)
-            controls.close()
-            self.removeWidget(controls)
-            # controls.hide()
-            controls = None
+        controls = self.widgets.pop(layer)
+        self.removeWidget(controls)
+        print(controls.layer)
+        controls.deleteLater()
+        print(controls.layer)
+        # controls.setParent(None)
+        # controls.hide()
+        # controls.deleteLater()
+        # controls = None
+        # del self.widgets[layer]
 
     def closeEvent(self, event):
         disconnect_events(self.viewer.layers.events, self)
         disconnect_events(self.viewer.dims.events, self)
         self.viewer = None
-        self.widgets.clear()
+        # for layer in self.widgets:
+        #     controls = self.widgets[layer]
+        #     self.removeWidget(controls)
+        #     controls.hide()
+        #     controls.deleteLater()
+        #     controls = None
+
+        # self.widgets.clear()
         return super().closeEvent(event)
