@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QComboBox, QHBoxLayout
+from qtpy.QtWidgets import QComboBox, QFrame, QHBoxLayout
 
 from napari._qt.layer_controls.qt_image_controls_base import (
     QtBaseImageControls,
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     import napari.layers
 
 
-class QtSurfaceControls(QtBaseImageControls):
+class QtSurfaceControls(QtBaseImageControls, QFrame):
     """Qt view and controls for the napari Surface layer.
 
     Parameters
@@ -29,10 +29,10 @@ class QtSurfaceControls(QtBaseImageControls):
 
     layer: 'napari.layers.Surface'
 
-    def __init__(self, layer) -> None:
-        super().__init__(layer)
+    def __init__(self, layer, parent=None) -> None:
+        super().__init__(layer, parent=parent)
 
-        colormap_layout = QHBoxLayout()
+        colormap_layout = QHBoxLayout(self)
         colormap_layout.addWidget(self.colorbarLabel)
         colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
@@ -64,4 +64,5 @@ class QtSurfaceControls(QtBaseImageControls):
         text : str
             Name of shading mode, eg: 'flat', 'smooth', 'none'.
         """
+
         self.layer.shading = self.shadingComboBox.currentData()

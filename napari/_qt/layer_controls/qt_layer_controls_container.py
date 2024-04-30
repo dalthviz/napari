@@ -29,7 +29,7 @@ layer_to_controls = {
 }
 
 
-def create_qt_layer_controls(layer):
+def create_qt_layer_controls(layer, parent=None):
     """
     Create a qt controls widget for a layer based on its layer type.
 
@@ -64,7 +64,7 @@ def create_qt_layer_controls(layer):
     # Sort the list of candidates by 'lineage'
     candidates.sort(key=lambda layer_type: layer_cls.mro().index(layer_type))
     controls = layer_to_controls[candidates[0]]
-    return controls(layer)
+    return controls(layer, parent=parent)
 
 
 class QtLayerControlsContainer(QStackedWidget):
@@ -92,7 +92,7 @@ class QtLayerControlsContainer(QStackedWidget):
         self.viewer = viewer
 
         self.setMouseTracking(True)
-        self.empty_widget = QFrame()
+        self.empty_widget = QFrame(self)
         self.empty_widget.setObjectName('empty_controls_widget')
         self.widgets = {}
         self.addWidget(self.empty_widget)
@@ -127,7 +127,7 @@ class QtLayerControlsContainer(QStackedWidget):
         if layer is None:
             self.setCurrentWidget(self.empty_widget)
         else:
-            controls = self.widgets[layer]
+            controls = self.widgets[id(layer)]
             self.setCurrentWidget(controls)
 
     def _add(self, event):
@@ -139,10 +139,10 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         layer = event.value
-        controls = create_qt_layer_controls(layer)
+        controls = create_qt_layer_controls(layer, parent=self)
         controls.ndisplay = self.viewer.dims.ndisplay
         self.addWidget(controls)
-        self.widgets[layer] = controls
+        self.widgets[id(layer)] = controls
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
@@ -153,9 +153,11 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         layer = event.value
-        controls = self.widgets[layer]
+        controls = self.widgets.pop(id(layer))
+        if len(self.widgets) == 0:
+            self.setCurrentWidget(self.empty_widget)
         self.removeWidget(controls)
-        controls.hide()
+        # controls.hide()
         controls.deleteLater()
         controls = None
-        del self.widgets[layer]
+        # del self.widgets[layer]

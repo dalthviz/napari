@@ -89,12 +89,19 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_add_layer(make_napari_viewer, layer_class, data, ndim):
+def test_add_layer(make_napari_viewer, layer_class, data, ndim, qtbot):
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window._qt_viewer
+    window = viewer.window._qt_window
+    with qtbot.waitExposed(window):
+        window.show()
 
     add_layer_by_type(viewer, layer_class, data)
+    qtbot.wait(2000)
     check_viewer_functioning(viewer, view, data, ndim)
+    qtbot.wait(2000)
+    viewer.layers.clear()
+    qtbot.wait(2000)
 
 
 def test_new_labels(make_napari_viewer):
@@ -696,11 +703,13 @@ def qt_viewer_with_controls(qtbot):
     qt_viewer = QtViewer(viewer=ViewerModel())
     qt_viewer.show()
     qt_viewer.controls.show()
+    qtbot.addWidget(qt_viewer)
+    qtbot.addWidget(qt_viewer.controls)
     yield qt_viewer
-    qt_viewer.controls.hide()
-    qt_viewer.controls.close()
-    qt_viewer.hide()
-    qt_viewer.close()
+    # qt_viewer.controls.hide()
+    # qt_viewer.controls.close()
+    # qt_viewer.hide()
+    # qt_viewer.close()
     qt_viewer._instances.clear()
     qtbot.wait(50)
 

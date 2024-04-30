@@ -1,10 +1,11 @@
+import weakref
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
 
 from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers.base._base_constants import BLENDING_TRANSLATIONS, Blending
 from napari.layers.base.base import Layer
-from napari.utils.events import disconnect_events
 from napari.utils.translations import trans
 
 # opaque and minimum blending do not support changing alpha (opacity)
@@ -14,8 +15,8 @@ NO_OPACITY_BLENDING_MODES = {str(Blending.MINIMUM), str(Blending.OPAQUE)}
 class LayerFormLayout(QFormLayout):
     """Reusable form layout for subwidgets in each QtLayerControls class"""
 
-    def __init__(self, QWidget=None) -> None:
-        super().__init__(QWidget)
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
         self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
@@ -43,12 +44,12 @@ class QtLayerControls(QFrame):
         Label for the opacity slider widget.
     """
 
-    def __init__(self, layer: Layer) -> None:
-        super().__init__()
+    def __init__(self, layer: Layer, parent=None) -> None:
+        super().__init__(parent=None)
 
         self._ndisplay: int = 2
 
-        self.layer = layer
+        self._layer = weakref.ref(layer)
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
 
@@ -64,7 +65,7 @@ class QtLayerControls(QFrame):
         sld.setSingleStep(0.01)
         sld.valueChanged.connect(self.changeOpacity)
         self.opacitySlider = sld
-        self.opacityLabel = QLabel(trans._('opacity:'))
+        self.opacityLabel = QLabel(trans._('opacity:'), parent=self)
 
         self._on_opacity_change()
 
@@ -84,6 +85,10 @@ class QtLayerControls(QFrame):
         self.opacityLabel.setEnabled(
             self.layer.blending not in NO_OPACITY_BLENDING_MODES
         )
+
+    @property
+    def layer(self):
+        return self._layer()
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
@@ -105,22 +110,23 @@ class QtLayerControls(QFrame):
         text : str
             Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
         """
-        self.layer.blending = self.blendComboBox.currentData()
-        # opaque and minimum blending do not support changing alpha
-        self.opacitySlider.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
-        )
-        self.opacityLabel.setEnabled(
-            self.layer.blending not in NO_OPACITY_BLENDING_MODES
-        )
-
-        blending_tooltip = ''
-        if self.layer.blending == str(Blending.MINIMUM):
-            blending_tooltip = trans._(
-                '`minimum` blending mode works best with inverted colormaps with a white background.',
+        with self.layer.events.blocker(self._on_blending_change):
+            self.layer.blending = self.blendComboBox.currentData()
+            # opaque and minimum blending do not support changing alpha
+            self.opacitySlider.setEnabled(
+                self.layer.blending not in NO_OPACITY_BLENDING_MODES
             )
-        self.blendComboBox.setToolTip(blending_tooltip)
-        self.layer.help = blending_tooltip
+            self.opacityLabel.setEnabled(
+                self.layer.blending not in NO_OPACITY_BLENDING_MODES
+            )
+
+            blending_tooltip = ''
+            if self.layer.blending == str(Blending.MINIMUM):
+                blending_tooltip = trans._(
+                    '`minimum` blending mode works best with inverted colormaps with a white background.',
+                )
+            self.blendComboBox.setToolTip(blending_tooltip)
+            self.layer.help = blending_tooltip
 
     def _on_opacity_change(self):
         """Receive layer model opacity change event and update opacity slider."""
@@ -151,15 +157,15 @@ class QtLayerControls(QFrame):
         to 2D or 3D visualization only.
         """
 
-    def deleteLater(self):
-        disconnect_events(self.layer.events, self)
-        super().deleteLater()
+    # def deleteLater(self):
+    #    disconnect_events(self.layer.events, self)
+    #    super().deleteLater()
 
-    def close(self):
-        """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.events, self)
-        for child in self.children():
-            close_method = getattr(child, 'close', None)
-            if close_method is not None:
-                close_method()
-        return super().close()
+    # def closeEvent(self, event):
+    #    """Disconnect events when widget is closing."""
+    #    disconnect_events(self.layer.events, self)
+    #    for child in self.children():
+    #        close_method = getattr(child, 'close', None)
+    #        if close_method is not None:
+    #            close_method()
+    #    return super().closeEvent(event)

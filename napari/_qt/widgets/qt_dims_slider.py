@@ -152,7 +152,7 @@ class QtDimSliderWidget(QWidget):
         # Set the maximum values of the range slider to be one step less than
         # the range of the layer as otherwise the slider can move beyond the
         # shape of the layer as the endpoint is included
-        slider = ModifiedScrollBar(Qt.Orientation.Horizontal)
+        slider = ModifiedScrollBar(Qt.Orientation.Horizontal, parent=self)
         slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         slider.setMinimum(0)
         slider.setMaximum(self.dims.nsteps[self.axis] - 1)
@@ -163,12 +163,12 @@ class QtDimSliderWidget(QWidget):
         # Listener to be used for sending events back to model:
         slider.valueChanged.connect(self._on_value_changed)
 
-        def slider_focused_listener():
-            self.dims.last_used = self.axis
-
         # linking focus listener to the last used:
-        slider.sliderPressed.connect(slider_focused_listener)
+        slider.sliderPressed.connect(self.slider_focused_listener)
         self.slider = slider
+
+    def slider_focused_listener(self):
+        self.dims.last_used = self.axis
 
     def _create_play_button_widget(self):
         """Creates the actual play button, which has the modal popup."""

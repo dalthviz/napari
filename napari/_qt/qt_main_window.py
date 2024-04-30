@@ -298,31 +298,31 @@ class _QtMainWindow(QMainWindow):
         else:
             super().showFullScreen()
 
-    def eventFilter(self, source, event):
-        # Handle showing hidden menubar on mouse move event.
-        # We do not hide menubar when a menu is being shown or
-        # we are not in menubar toggled state
-        if (
-            QApplication.activePopupWidget() is None
-            and self._toggle_menubar_visibility
-        ):
-            if event.type() == QEvent.Type.MouseMove:
-                if self.menuBar().isHidden():
-                    rect = self.geometry()
-                    # set mouse-sensitive zone to trigger showing the menubar
-                    rect.setHeight(25)
-                    if rect.contains(event.globalPos()):
-                        self.menuBar().show()
-                else:
-                    rect = QRect(
-                        self.menuBar().mapToGlobal(QPoint(0, 0)),
-                        self.menuBar().size(),
-                    )
-                    if not rect.contains(event.globalPos()):
-                        self.menuBar().hide()
-            elif event.type() == QEvent.Type.Leave and source is self:
-                self.menuBar().hide()
-        return QMainWindow.eventFilter(self, source, event)
+    # def eventFilter(self, source, event):
+    # Handle showing hidden menubar on mouse move event.
+    # We do not hide menubar when a menu is being shown or
+    # we are not in menubar toggled state
+    #    if (
+    #        QApplication.activePopupWidget() is None
+    #        and self._toggle_menubar_visibility
+    #    ):
+    #        if event.type() == QEvent.Type.MouseMove:
+    #            if self.menuBar().isHidden():
+    #                rect = self.geometry()
+    #                # set mouse-sensitive zone to trigger showing the menubar
+    #                rect.setHeight(25)
+    #                if rect.contains(event.globalPos()):
+    #                    self.menuBar().show()
+    #            else:
+    #                rect = QRect(
+    #                    self.menuBar().mapToGlobal(QPoint(0, 0)),
+    #                    self.menuBar().size(),
+    #                )
+    #                if not rect.contains(event.globalPos()):
+    #                    self.menuBar().hide()
+    #        elif event.type() == QEvent.Type.Leave and source is self:
+    #            self.menuBar().hide()
+    #    return QMainWindow.eventFilter(self, source, event)
 
     def _load_window_settings(self):
         """
@@ -640,7 +640,7 @@ class Window:
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
         # create QApplication if it doesn't already exist
-        qapp = get_app()
+        qapp = get_app()  # noqa
 
         # Dictionary holding dock widgets
         self._dock_widgets: MutableMapping[str, QtViewerDockWidget] = (
@@ -652,7 +652,7 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer, self)
-        qapp.installEventFilter(self._qt_window)
+        # qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
@@ -1631,7 +1631,8 @@ class Window:
             self._teardown()
             self._qt_viewer.close()
             self._qt_window.close()
-            del self._qt_window
+            # del self._qt_window
+            self._qt_window = None
 
     def _open_preferences_dialog(self) -> PreferencesDialog:
         """Edit preferences from the menubar."""

@@ -315,13 +315,13 @@ def make_napari_viewer(
 
     # close viewers, but don't saving window settings while closing
     for viewer in viewers:
-        if hasattr(viewer.window, '_qt_window'):
-            with patch.object(
-                viewer.window._qt_window, '_save_current_window_settings'
-            ):
-                viewer.close()
-        else:
-            viewer.close()
+        # if hasattr(viewer.window, '_qt_window'):
+        #    with patch.object(
+        #        viewer.window._qt_window, '_save_current_window_settings'
+        #    ):
+        #        viewer.close()
+        # else:
+        viewer.close()
 
     if GCPASS % 50 == 0 or len(QtViewer._instances):
         gc.collect()

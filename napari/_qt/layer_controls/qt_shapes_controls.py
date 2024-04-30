@@ -87,8 +87,8 @@ class QtShapesControls(QtLayerControls):
 
     layer: 'napari.layers.Shapes'
 
-    def __init__(self, layer) -> None:
-        super().__init__(layer)
+    def __init__(self, layer, parent=None) -> None:
+        super().__init__(layer, parent=parent)
 
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.edge_width.connect(self._on_edge_width_change)

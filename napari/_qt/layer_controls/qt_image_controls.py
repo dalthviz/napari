@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QSlider,
-    QWidget,
 )
 from superqt import QLabeledDoubleSlider
 
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     import napari.layers
 
 
-class QtImageControls(QtBaseImageControls):
+class QtImageControls(QtBaseImageControls, QFrame):
     """Qt view and controls for the napari Image layer.
 
     Parameters
@@ -60,8 +60,8 @@ class QtImageControls(QtBaseImageControls):
 
     layer: 'napari.layers.Image'
 
-    def __init__(self, layer) -> None:
-        super().__init__(layer)
+    def __init__(self, layer, parent=None) -> None:
+        super().__init__(layer, parent=parent)
 
         self.layer.events.interpolation2d.connect(
             self._on_interpolation_change
@@ -81,7 +81,7 @@ class QtImageControls(QtBaseImageControls):
         self.interpComboBox.currentTextChanged.connect(
             self.changeInterpolation
         )
-        self.interpLabel = QLabel(trans._('interpolation:'))
+        self.interpLabel = QLabel(trans._('interpolation:'), parent=self)
 
         renderComboBox = QComboBox(self)
         rendering_options = [i.value for i in ImageRendering]
@@ -92,7 +92,7 @@ class QtImageControls(QtBaseImageControls):
         renderComboBox.setCurrentIndex(index)
         renderComboBox.currentTextChanged.connect(self.changeRendering)
         self.renderComboBox = renderComboBox
-        self.renderLabel = QLabel(trans._('rendering:'))
+        self.renderLabel = QLabel(trans._('rendering:'), parent=self)
 
         self.depictionComboBox = QComboBox(self)
         depiction_options = [d.value for d in VolumeDepiction]
@@ -102,11 +102,11 @@ class QtImageControls(QtBaseImageControls):
         )
         self.depictionComboBox.setCurrentIndex(index)
         self.depictionComboBox.currentTextChanged.connect(self.changeDepiction)
-        self.depictionLabel = QLabel(trans._('depiction:'))
+        self.depictionLabel = QLabel(trans._('depiction:'), parent=self)
 
         # plane controls
         self.planeNormalButtons = PlaneNormalButtons(self)
-        self.planeNormalLabel = QLabel(trans._('plane normal:'))
+        self.planeNormalLabel = QLabel(trans._('plane normal:'), parent=self)
         action_manager.bind_button(
             'napari:orient_plane_normal_along_z',
             self.planeNormalButtons.zButton,
@@ -125,9 +125,11 @@ class QtImageControls(QtBaseImageControls):
         )
 
         self.planeThicknessSlider = QLabeledDoubleSlider(
-            Qt.Orientation.Horizontal, self
+            Qt.Orientation.Horizontal, parent=self
         )
-        self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
+        self.planeThicknessLabel = QLabel(
+            trans._('plane thickness:'), parent=self
+        )
         self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
         self.planeThicknessSlider.setMinimum(1)
         self.planeThicknessSlider.setMaximum(50)
@@ -144,7 +146,7 @@ class QtImageControls(QtBaseImageControls):
         sld.setValue(self.layer.iso_threshold)
         sld.valueChanged.connect(self.changeIsoThreshold)
         self.isoThresholdSlider = sld
-        self.isoThresholdLabel = QLabel(trans._('iso threshold:'))
+        self.isoThresholdLabel = QLabel(trans._('iso threshold:'), parent=self)
 
         sld = QSlider(Qt.Orientation.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -154,13 +156,13 @@ class QtImageControls(QtBaseImageControls):
         sld.setValue(int(self.layer.attenuation * 200))
         sld.valueChanged.connect(self.changeAttenuation)
         self.attenuationSlider = sld
-        self.attenuationLabel = QLabel(trans._('attenuation:'))
+        self.attenuationLabel = QLabel(trans._('attenuation:'), parent=self)
 
         self._on_ndisplay_changed()
 
-        colormap_layout = QHBoxLayout()
+        colormap_layout = QHBoxLayout(self)
         if hasattr(self.layer, 'rgb') and self.layer.rgb:
-            colormap_layout.addWidget(QLabel('RGB'))
+            colormap_layout.addWidget(QLabel('RGB', parent=self))
             self.colormapComboBox.setVisible(False)
             self.colorbarLabel.setVisible(False)
         else:
@@ -170,9 +172,12 @@ class QtImageControls(QtBaseImageControls):
 
         self.layout().addRow(self.opacityLabel, self.opacitySlider)
         self.layout().addRow(
-            trans._('contrast limits:'), self.contrastLimitsSlider
+            QLabel(trans._('contrast limits:'), parent=self),
+            self.contrastLimitsSlider,
         )
-        self.layout().addRow(trans._('auto-contrast:'), self.autoScaleBar)
+        self.layout().addRow(
+            QLabel(trans._('auto-contrast:'), parent=self), self.autoScaleBar
+        )
         self.layout().addRow(trans._('gamma:'), self.gammaSlider)
         self.layout().addRow(trans._('colormap:'), colormap_layout)
         self.layout().addRow(trans._('blending:'), self.blendComboBox)
@@ -234,7 +239,8 @@ class QtImageControls(QtBaseImageControls):
         self._update_plane_parameter_visibility()
 
     def changePlaneThickness(self, value: float):
-        self.layer.plane.thickness = value
+        with self.layer.plane.events.blocker(self._on_plane_thickness_change):
+            self.layer.plane.thickness = value
 
     def changeIsoThreshold(self, value):
         """Change isosurface threshold on the layer model.
@@ -368,7 +374,7 @@ class QtImageControls(QtBaseImageControls):
             self.depictionLabel.show()
 
 
-class PlaneNormalButtons(QWidget):
+class PlaneNormalButtons(QFrame):
     """Qt buttons for controlling plane orientation.
 
         Attributes
@@ -385,14 +391,14 @@ class PlaneNormalButtons(QWidget):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
-        self.setLayout(QHBoxLayout())
+        self.setLayout(QHBoxLayout(self))
         self.layout().setSpacing(2)
         self.layout().setContentsMargins(0, 0, 0, 0)
 
-        self.xButton = QPushButton('x')
-        self.yButton = QPushButton('y')
-        self.zButton = QPushButton('z')
-        self.obliqueButton = QPushButton(trans._('oblique'))
+        self.xButton = QPushButton('x', parent=self)
+        self.yButton = QPushButton('y', parent=self)
+        self.zButton = QPushButton('z', parent=self)
+        self.obliqueButton = QPushButton(trans._('oblique'), parent=self)
 
         self.layout().addWidget(self.xButton)
         self.layout().addWidget(self.yButton)

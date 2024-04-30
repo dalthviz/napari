@@ -29,8 +29,8 @@ class QtTracksControls(QtLayerControls):
 
     layer: 'napari.layers.Tracks'
 
-    def __init__(self, layer) -> None:
-        super().__init__(layer)
+    def __init__(self, layer, parent=None) -> None:
+        super().__init__(layer, parent=parent)
 
         # NOTE(arl): there are no events fired for changing checkboxes
         self.layer.events.tail_width.connect(self._on_tail_width_change)
@@ -42,40 +42,46 @@ class QtTracksControls(QtLayerControls):
 
         # combo box for track coloring, we can get these from the properties
         # keys
-        self.color_by_combobox = QComboBox()
+        self.color_by_combobox = QComboBox(self)
         self.color_by_combobox.addItems(self.layer.properties_to_color_by)
 
-        self.colormap_combobox = QComboBox()
+        self.colormap_combobox = QComboBox(self)
         for name, colormap in AVAILABLE_COLORMAPS.items():
             display_name = colormap._display_name
             self.colormap_combobox.addItem(display_name, name)
 
         # slider for track head length
-        self.head_length_slider = QSlider(Qt.Orientation.Horizontal)
+        self.head_length_slider = QSlider(
+            Qt.Orientation.Horizontal, parent=self
+        )
         self.head_length_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.head_length_slider.setMinimum(0)
         self.head_length_slider.setMaximum(self.layer._max_length)
         self.head_length_slider.setSingleStep(1)
 
         # slider for track tail length
-        self.tail_length_slider = QSlider(Qt.Orientation.Horizontal)
+        self.tail_length_slider = QSlider(
+            Qt.Orientation.Horizontal, parent=self
+        )
         self.tail_length_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tail_length_slider.setMinimum(1)
         self.tail_length_slider.setMaximum(self.layer._max_length)
         self.tail_length_slider.setSingleStep(1)
 
         # slider for track edge width
-        self.tail_width_slider = QSlider(Qt.Orientation.Horizontal)
+        self.tail_width_slider = QSlider(
+            Qt.Orientation.Horizontal, parent=self
+        )
         self.tail_width_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tail_width_slider.setMinimum(1)
         self.tail_width_slider.setMaximum(int(2 * self.layer._max_width))
         self.tail_width_slider.setSingleStep(1)
 
         # checkboxes for display
-        self.id_checkbox = QCheckBox()
-        self.tail_checkbox = QCheckBox()
+        self.id_checkbox = QCheckBox(self)
+        self.tail_checkbox = QCheckBox(self)
         self.tail_checkbox.setChecked(True)
-        self.graph_checkbox = QCheckBox()
+        self.graph_checkbox = QCheckBox(self)
         self.graph_checkbox.setChecked(True)
 
         self.tail_width_slider.valueChanged.connect(self.change_tail_width)
