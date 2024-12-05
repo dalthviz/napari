@@ -1209,6 +1209,13 @@ class Labels(ScalarFieldBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        int_coord = tuple(np.round(coord).astype(int))
+        # If requested paint location is outside data shape then return
+        if np.any(np.less(int_coord, 0)) or np.any(
+            np.greater_equal(int_coord, self.data.shape)
+        ):
+            return
+
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
         paint_scale = np.array(
             [self.scale[i] for i in dims_to_paint], dtype=float
