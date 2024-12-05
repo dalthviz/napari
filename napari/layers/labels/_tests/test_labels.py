@@ -926,6 +926,16 @@ def test_paint_polygon_2d_in_3d():
     assert np.array_equiv(data[[0, 2], :], 0)
 
 
+def test_paint_outside_data_shape():
+    """Test that painting label on a location outside the data shape does nothing."""
+    data = np.zeros((40, 40, 40), dtype=np.uint32)
+    layer = Labels(data)
+    layer.mode = 'paint'
+    layer.paint((41, 40, 40), 3)
+
+    assert np.sum(layer.data) == 0
+
+
 def test_fill():
     """Test filling labels with different brush sizes."""
     np.random.seed(0)
