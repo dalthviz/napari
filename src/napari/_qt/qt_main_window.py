@@ -156,6 +156,7 @@ class _QtMainWindow(QMainWindow):
         self._positions = []
         self._toggle_menubar_visibility = False
 
+        self._force_close = False
         self._is_close_dialog = {False: True, True: True}
         # this ia sa workaround for #5335 issue. The dict is used to not
         # collide shortcuts for close and close all windows
@@ -484,8 +485,9 @@ class _QtMainWindow(QMainWindow):
             dialog = ShimmedPluginDialog(self, new_plugins)
             dialog.exec_()
 
-    def close(self, quit_app=False, confirm_need=False):
+    def close(self, quit_app=False, confirm_need=False, force=False):
         """Override to handle closing app or just the window."""
+        self._force_close = force
         if not quit_app and not self._qt_viewer.viewer.layers:
             return super().close()
         confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
@@ -603,7 +605,8 @@ class _QtMainWindow(QMainWindow):
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
         if (
-            event.spontaneous()
+            not self._force_close
+            and event.spontaneous()
             and get_settings().application.confirm_close_window
             and self._qt_viewer.viewer.layers
             and ConfirmCloseDialog(self, False).exec_() != QDialog.Accepted
@@ -1857,14 +1860,14 @@ class Window:
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.removed.disconnect(self._remove_theme)
 
-    def close(self):
+    def close(self, force=False):
         """Close the viewer window and cleanup sub-widgets."""
         # Someone is closing us twice? Only try to delete self._qt_window
         # if we still have one.
         if hasattr(self, '_qt_window'):
             self._teardown()
             self._qt_viewer.close()
-            self._qt_window.close()
+            self._qt_window.close(force=force)
             del self._qt_window
 
     def _open_preferences_dialog(self) -> PreferencesDialog:

@@ -259,7 +259,7 @@ class Viewer(ViewerModel):
         """Resize, show, and raise the viewer window."""
         self.window.show(block=block)
 
-    def close(self):
+    def close(self, force=False):
         """Close the viewer window."""
         # Shutdown the slicer first to avoid processing any more tasks.
         self._layer_slicer.shutdown()
@@ -269,12 +269,12 @@ class Viewer(ViewerModel):
         # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window
-        self.window.close()
+        self.window.close(force=force)
 
         self._instances.discard(self)
 
     @classmethod
-    def close_all(cls) -> int:
+    def close_all(cls, force=False) -> int:
         """
         Class method, Close all existing viewer instances.
 
@@ -293,7 +293,7 @@ class Viewer(ViewerModel):
         viewers = list(cls._instances)
         ret = len(viewers)
         for viewer in viewers:
-            viewer.close()
+            viewer.close(force=force)
         return ret
 
 
